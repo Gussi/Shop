@@ -64,7 +64,7 @@ public class DisplayItem implements Serializable{
 	        spawn(is);
 	    }
 
-		private boolean remove(){
+		public boolean remove(){
 			Location displayLoc = location.deserialize().getBlock().getLocation();
 			
 			boolean removed = false;

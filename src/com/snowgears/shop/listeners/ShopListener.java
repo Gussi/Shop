@@ -1,41 +1,25 @@
 package com.snowgears.shop.listeners;
 
 import java.util.ArrayList;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map.Entry;
 
-import net.milkbowl.vault.economy.EconomyResponse;
 
-import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.Chest;
-import org.bukkit.block.DoubleChest;
 import org.bukkit.enchantments.Enchantment;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Item;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.BlockBreakEvent;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.entity.CreatureSpawnEvent;
-import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.player.PlayerBucketEmptyEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.potion.PotionType;
@@ -49,7 +33,6 @@ import com.snowgears.shop.events.PlayerCreateShopEvent;
 import com.snowgears.shop.events.PlayerDestroyShopEvent;
 import com.snowgears.shop.events.PlayerOpenShopEvent;
 import com.snowgears.shop.events.PlayerPrepareCreateShopEvent;
-import com.snowgears.shop.utils.SerializableLocation;
 
 
 public class ShopListener implements Listener{
@@ -88,7 +71,7 @@ public class ShopListener implements Listener{
 		
 		if(!openShopInventories.containsKey(event.getInventory()))
 			return;
-		System.out.println("openShopInventories contains this shop.");
+		System.out.println("openShopInventories contains this shop inventory.");
 		ShopObject shop = openShopInventories.get(event.getInventory());
 
 		if(event.getCursor() != null){
