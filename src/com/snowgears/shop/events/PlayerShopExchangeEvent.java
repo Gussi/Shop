@@ -16,7 +16,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	 	private ShopObject shop;
 	 	private boolean cancelled;
 	    
-		public PlayerShopExchangeEvent(Player p, ShopObject s, ItemStack is) {
+		public PlayerShopExchangeEvent(Player p, ShopObject s) {
 			player = p;
 			shop = s;
 	    }

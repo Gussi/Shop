@@ -32,19 +32,50 @@ import com.snowgears.shop.ShopType;
 import com.snowgears.shop.events.PlayerCreateShopEvent;
 import com.snowgears.shop.events.PlayerDestroyShopEvent;
 import com.snowgears.shop.events.PlayerPreCreateShopEvent;
+import com.snowgears.shop.events.PlayerShopExchangeEvent;
 
 
 public class ShopListener implements Listener{
 	
 	private Shop plugin = Shop.plugin;
 	private HashMap<Location, ArrayList<Double>> signsAwaitingItems = new HashMap<Location, ArrayList<Double>>(); //location of sign, arraylist of values for shop (price, amount)
-//	public HashMap<Inventory, ShopObject> openShopInventories = new HashMap<Inventory, ShopObject>();
 	private HashMap<String, ShopObject> playersViewingShops = new HashMap<String, ShopObject>(); //player name, is viewing shop
 	
 	public ShopListener(Shop instance)
     {
         plugin = instance;
     }
+	
+	@EventHandler (priority = EventPriority.HIGHEST)
+	public void onShopSignClick(PlayerInteractEvent event){
+		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
+			if(event.getClickedBlock().getType() == Material.WALL_SIGN){
+				org.bukkit.material.Sign sign = (org.bukkit.material.Sign)event.getClickedBlock().getState().getData();
+				ShopObject shop = plugin.shopHandler.getShop(event.getClickedBlock().getRelative(sign.getAttachedFace()).getLocation());
+				if(shop == null)
+					return;
+				Player player = event.getPlayer();
+				
+				//player right clicked own sign
+				if(shop.getOwner().equals(player.getName())){
+					if(shop.getType() == ShopType.SELLING && plugin.econ == null){
+						int amountOfMoney = getAmount(shop.getInventory(), plugin.economyMaterial);
+						player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfMoney+ChatColor.GRAY+" "+plugin.economyDisplayName+".");
+					}
+					else if(shop.getType() == ShopType.BUYING){
+						int amountOfItems = getAmount(shop.getInventory(), shop.getDisplayItem().getItemStack().getType(), shop.getDisplayItem().getItemStack().getData());
+						player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfItems+ChatColor.GRAY+" "+shop.getDisplayItem().getItemStack().getType().name().replace("_", " ").toLowerCase()+".");
+					}
+				}
+				//player right clicked other shops' sign
+				else{
+					PlayerShopExchangeEvent e = new PlayerShopExchangeEvent(player, shop);
+					plugin.getServer().getPluginManager().callEvent(e);
+					//TODO listen in on playershopexchangeevent and calculate what to give shop / player based on economy and what shop is selling
+				}
+			}
+		}
+	}
 
 	//TODO if item putting into shop is different from shop item in any way, cancel action
 	//TODO also make sure to cancel InventoryDragEvent with the same thing
@@ -102,7 +133,6 @@ public class ShopListener implements Listener{
 		if(playersViewingShops.containsKey(event.getPlayer().getName())){
 			playersViewingShops.remove(event.getPlayer().getName());
 		}
-		System.out.println("Closed inventory"); //TODO remove this
 	}
 	
 	private void showDisplayItemStats(ShopObject shop, Player player){
@@ -156,7 +186,6 @@ public class ShopListener implements Listener{
 	
 	@EventHandler (priority = EventPriority.MONITOR)
 	public void onPrepareShop(PlayerPreCreateShopEvent event){
-		System.out.println("PlayerPrepareCreateShopEvent called.");
 		if(event.isCancelled()){
 			Sign sign = (Sign)event.getSignLocation().getBlock().getState();
 			sign.setLine(0, "");
@@ -182,7 +211,6 @@ public class ShopListener implements Listener{
 	
 	@EventHandler (priority = EventPriority.MONITOR)
 	public void onCreateShop(final PlayerCreateShopEvent event){
-		System.out.println("PlayerCreateShopEvent called.");
 		plugin.shopListener.setValues(event.getShop().getSignLocation(), null);
 		
 		if(plugin.miscListener.invincibleSigns.contains(event.getShop().getSignLocation())){
@@ -215,29 +243,16 @@ public class ShopListener implements Listener{
 		Player player = event.getPlayer();
 		
 		plugin.shopHandler.addShop(event.getShop());
-		
-		//TODO make this periodic, not everytime someone creates a shop
-//		plugin.shopMap.put("load", plugin.alisten.allShops);
-//		plugin.saveHashMapTo(plugin.shopMap, plugin.shopFile);
-		
+
 		ItemStack di = event.getShop().getDisplayItem().getItemStack();
 		if(event.getShop().getType() == ShopType.SELLING)
-			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that sells "+ChatColor.GOLD+ di.getType().name().replace("_", " ").toLowerCase()+ChatColor.YELLOW+".");
+			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that sells "+ChatColor.GOLD+ di.getType().name().replace("_", " ").toLowerCase()+"(s)"+ChatColor.YELLOW+".");
 		else
-			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that buys "+ChatColor.GOLD+di.getType().name().replace("_", " ").toLowerCase()+ChatColor.YELLOW+".");		
+			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that buys "+ChatColor.GOLD+di.getType().name().replace("_", " ").toLowerCase()+"(s)"+ChatColor.YELLOW+".");		
 	}
-	
-	//test
-	@EventHandler
-	public void onShopDestroyTest(PlayerDestroyShopEvent event){
-		Player player = event.getPlayer();
-		if(player.getItemInHand().getType() == Material.STICK)
-			event.setCancelled(true);
-	}
-	
+
 	@EventHandler (priority = EventPriority.MONITOR)
 	public void onShopDestroy(PlayerDestroyShopEvent event){
-		System.out.println("PlayerDestroyShopEvent called.");
 		if(event.isCancelled()){
 			return;
 		}
@@ -246,14 +261,11 @@ public class ShopListener implements Listener{
 		event.getShop().delete();
 		
 		if(event.getShop().getOwner().equals(player.getName())){
-			player.sendMessage(ChatColor.GRAY+"You have removed this plugin.");
+			player.sendMessage(ChatColor.GRAY+"You have removed this shop.");
 		}
 		else{
 			player.sendMessage(ChatColor.GRAY+"You have removed a shop owned by "+event.getShop().getOwner());
 		}
-		
-//		plugin.shopMap.put("load", allShops);
-//		plugin.saveHashMapTo(plugin.shopMap, plugin.shopFile);
 	}
 	
 	//TODO find out whats different about this method from non-econ one and merge the two

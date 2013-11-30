@@ -9,7 +9,7 @@ usePermissions: false
 Economy:
    useVault: false
    itemCurrency (non-vault): EMERALD
-   displayName: Rupees
+   displayName: Rupee(s)
    currencyToStartWith: 0
 
 
