@@ -6,7 +6,9 @@ import org.bukkit.event.Cancellable;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 
-public class PlayerPrepareCreateShopEvent extends Event implements Cancellable{
+import com.snowgears.shop.ShopType;
+
+public class PlayerPreCreateShopEvent extends Event implements Cancellable{
 
 	 private static final HandlerList handlers = new HandlerList();
 	    private Player player;
@@ -14,18 +16,18 @@ public class PlayerPrepareCreateShopEvent extends Event implements Cancellable{
 	 	private Location chestLocation;
 		private Double price = null;
 		private Integer amount = null;
-		private boolean isSellingShop = true;
 		private boolean isAdminShop = true;
+		private ShopType shopType;
 	 	private boolean cancelled;
 	    
-		public PlayerPrepareCreateShopEvent(Player p, Location sl, Location cl, double pr, int a, boolean sell, boolean admin) {
+		public PlayerPreCreateShopEvent(Player p, Location sl, Location cl, double pr, int a, boolean admin, ShopType t) {
 			player = p;
 			signLocation = sl;
 			chestLocation = cl;
 			price = pr;
 			amount = a;
-			isSellingShop = sell;
 			isAdminShop = admin;
+			shopType = t;
 	    }
 		
 		public Player getPlayer(){
@@ -48,8 +50,8 @@ public class PlayerPrepareCreateShopEvent extends Event implements Cancellable{
 	        return amount;
 	    }
 	    
-	    public boolean isSellingShop() {
-	        return isSellingShop;
+	    public ShopType getShopType() {
+	        return shopType;
 	    }
 	    
 	    public boolean isAdminShop() {

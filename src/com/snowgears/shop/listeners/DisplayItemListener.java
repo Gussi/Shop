@@ -1,7 +1,5 @@
 package com.snowgears.shop.listeners;
 
-import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -30,19 +28,22 @@ public class DisplayItemListener implements Listener{
 			event.setCancelled(true);
 			return;
 		}
-		for(ShopObject shop : plugin.alisten.allShops){
-			if(shop.getDisplayItem().getUniqueId().equals(event.getItem().getUniqueId())){
-				event.setCancelled(true);
-				return;
-			}	
-		}
+//		Location shopLoc = event.getItem().getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
+//		ShopObject shop = Shop.getShopHandler().getShop(shopLoc);
+//		if(shop == null)
+//			return;
+//
+//		if(shop.getDisplayItem().getUniqueId().equals(event.getItem().getUniqueId())){
+//			event.setCancelled(true);
+//			return;
+//		}	
 	}
 
 	@EventHandler
 	public void onWaterFlow(BlockFromToEvent event){
-		if(event.getToBlock().getRelative(BlockFace.DOWN).getType() == Material.CHEST){
+		ShopObject shop = plugin.shopHandler.getShop(event.getToBlock().getRelative(BlockFace.DOWN).getLocation());
+		if(shop != null)
 			event.setCancelled(true);
-		}
 	}
 
 	@EventHandler (priority = EventPriority.HIGHEST)
@@ -51,26 +52,20 @@ public class DisplayItemListener implements Listener{
 			event.setCancelled(true);
 			return;
 		}
-		for(ShopObject shop : plugin.alisten.allShops){
-			if(shop.getDisplayItem().getUniqueId().equals(event.getEntity().getUniqueId())){
-				event.setCancelled(true);
-//				shop.displayItem.respawn();
-				return;
-			}	
-		}
+//		for(ShopObject shop : plugin.alisten.allShops){
+//			if(shop.getDisplayItem().getUniqueId().equals(event.getEntity().getUniqueId())){
+//				event.setCancelled(true);
+////				shop.displayItem.respawn();
+//				return;
+//			}	
+//		}
 	}
 	
 	@EventHandler (priority = EventPriority.HIGH)
 	public void onBlockPlace(BlockPlaceEvent event){
-		if(event.getBlock().getRelative(BlockFace.DOWN).getType() == Material.CHEST){
-			Location loc = event.getBlock().getLocation();
-			for(ShopObject shop : plugin.alisten.allShops){
-				if(shop.getDisplayItem().getLocation().getBlock().getLocation().equals(loc)){
-					event.setCancelled(true);
-					return;
-				}
-			}
-		}
+		ShopObject shop = plugin.shopHandler.getShop(event.getBlock().getRelative(BlockFace.DOWN).getLocation());
+		if(shop != null)
+			event.setCancelled(true);
 	}
 	
 	@EventHandler (priority = EventPriority.HIGHEST)
