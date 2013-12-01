@@ -1,6 +1,9 @@
+# Eclipse stuff
+/.classpath
+/.project
+/.settings
+/bin
 *.class
 
-# Package Files #
-*.jar
-*.war
-*.ear
+# Mac filesystem dust
+.DS_Store
