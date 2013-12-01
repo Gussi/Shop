@@ -17,7 +17,6 @@ public class ShopObject{
 	private Location location = null;
 	private Location signLocation = null;
 	private String owner = null;
-//	private DisplayItem displayItem = null;
 	private Item displayItem = null;
 	private Double price = null;
 	private Integer amount = null;
@@ -120,6 +119,37 @@ public class ShopObject{
 	public void setAdmin(boolean b){
 		isAdminShop = b;
 		updateSign();
+	}
+	
+	public boolean canAcceptAnotherTransaction(){
+		if(type == ShopType.SELLING){
+			//using item economy
+			if(Shop.plugin.econ == null){
+				int currencyPlayerHas = getAmount(player.getInventory(), new ItemStack(plugin.economyMaterial));
+				if(currencyPlayerHas < shop.getPrice())
+					return;
+			}
+			//using vault economy
+			else{
+				double currencyPlayerHas = plugin.econ.getBalance(player.getName());
+				if(currencyPlayerHas < shop.getPrice())
+					return;
+			}
+		}
+		else if(shop.getType() == ShopType.BUYING){
+			//using item economy
+			if(plugin.econ == null){
+				int currencyShopHas = getAmount(shop.getInventory(), new ItemStack(plugin.economyMaterial));
+				if(currencyShopHas < shop.getPrice())
+					return;
+			}
+			//using vault economy
+			else{
+				double currencyShopHas = plugin.econ.getBalance(shop.getOwner());
+				if(currencyShopHas < shop.getPrice())
+					return;
+			}
+		}
 	}
 	
 	public void updateSign(){

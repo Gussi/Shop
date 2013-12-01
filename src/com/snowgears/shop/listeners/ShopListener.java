@@ -46,35 +46,11 @@ public class ShopListener implements Listener{
         plugin = instance;
     }
 	
-	@EventHandler (priority = EventPriority.HIGHEST)
-	public void onShopSignClick(PlayerInteractEvent event){
-		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-			if(event.getClickedBlock().getType() == Material.WALL_SIGN){
-				org.bukkit.material.Sign sign = (org.bukkit.material.Sign)event.getClickedBlock().getState().getData();
-				ShopObject shop = plugin.shopHandler.getShop(event.getClickedBlock().getRelative(sign.getAttachedFace()).getLocation());
-				if(shop == null)
-					return;
-				Player player = event.getPlayer();
-				
-				//player right clicked own sign
-				if(shop.getOwner().equals(player.getName())){
-					if(shop.getType() == ShopType.SELLING && plugin.econ == null){
-						int amountOfMoney = getAmount(shop.getInventory(), plugin.economyMaterial);
-						player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfMoney+ChatColor.GRAY+" "+plugin.economyDisplayName+".");
-					}
-					else if(shop.getType() == ShopType.BUYING){
-						int amountOfItems = getAmount(shop.getInventory(), shop.getDisplayItem().getItemStack().getType(), shop.getDisplayItem().getItemStack().getData());
-						player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfItems+ChatColor.GRAY+" "+shop.getDisplayItem().getItemStack().getType().name().replace("_", " ").toLowerCase()+".");
-					}
-				}
-				//player right clicked other shops' sign
-				else{
-					PlayerShopExchangeEvent e = new PlayerShopExchangeEvent(player, shop);
-					plugin.getServer().getPluginManager().callEvent(e);
-					//TODO listen in on playershopexchangeevent and calculate what to give shop / player based on economy and what shop is selling
-				}
-			}
-		}
+	@EventHandler (priority = EventPriority.MONITOR)
+	public void onPlayerShopExchange(PlayerShopExchangeEvent event){
+		if(event.isCancelled())
+			return;
+		
 	}
 
 	//TODO if item putting into shop is different from shop item in any way, cancel action
@@ -807,18 +783,20 @@ public class ShopListener implements Listener{
 //		return shops;
 //	}
 	
-	public int getAmount(Inventory inventory, MaterialData data)
+	//get amount of itemstack in shop
+	public int getAmount(Inventory inventory, ItemStack is)
 	{
-	       	ItemStack[] items = inventory.getContents();
-	        int has = 0;
-	        for (ItemStack item : items)
-	        {
-	            if ((item != null) && (item.getAmount() > 0) && (item.getData().equals(data)))
-	            {
-	                has += item.getAmount();
-	            }
-	        }
-	        return has;
+		MaterialData md = is.getData();
+       	ItemStack[] items = inventory.getContents();
+        int has = 0;
+        for (ItemStack item : items)
+        {
+            if ((item != null) && (item.getAmount() > 0) && (item.getData().equals(md)))
+            {
+                has += item.getAmount();
+            }
+        }
+        return has;
 	}
 	
 	public ShopObject getShopPlayerIsViewing(Player player){

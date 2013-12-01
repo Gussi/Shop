@@ -14,11 +14,45 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	 private static final HandlerList handlers = new HandlerList();
 	    private Player player;
 	 	private ShopObject shop;
+	 	private ItemStack itemPlayerReceived;
+	 	private ItemStack itemShopReceived;
+	 	private double moneyPlayerReceived;
+	 	private double moneyShopReceived;
 	 	private boolean cancelled;
 	    
 		public PlayerShopExchangeEvent(Player p, ShopObject s) {
 			player = p;
 			shop = s;
+			
+			if(playerReceivedItem()){
+				itemPlayerReceived = shop.getDisplayItem().getItemStack();
+				itemPlayerReceived.setAmount(shop.getAmount());
+			}
+			else{
+				itemPlayerReceived = null;
+			}
+			
+			if(shopReceivedItem()){
+				itemShopReceived = shop.getDisplayItem().getItemStack();
+				itemShopReceived.setAmount(shop.getAmount());
+	    	}
+			else{
+				itemShopReceived = null;
+			}
+			
+			if(playerReceivedMoney()){
+	    		moneyPlayerReceived = shop.getPrice();
+	    	}
+			else{
+				moneyPlayerReceived = 0;
+			}
+			
+			if(shopReceivedMoney()){
+				moneyShopReceived = shop.getPrice();
+	    	}
+			else{
+				moneyShopReceived = 0;
+			}
 	    }
 
 		public Player getPlayer(){
@@ -34,12 +68,11 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 	    
 	    public ItemStack getItemPlayerReceived(){
-	    	if(playerReceivedItem()){
-	    		ItemStack item = shop.getDisplayItem().getItemStack();
-	    		item.setAmount(shop.getAmount());
-	    		return item;
-	    	}
-	    	return null;
+	    	return itemPlayerReceived;
+	    }
+	    
+	    public void setItemPlayerReceived(ItemStack is){
+	    	itemPlayerReceived = is;
 	    }
 	    
 	    public boolean shopReceivedItem(){
@@ -47,12 +80,11 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 
 	    public ItemStack getItemShopReceived() {
-	    	if(shopReceivedItem()){
-	    		ItemStack item = shop.getDisplayItem().getItemStack();
-	    		item.setAmount(shop.getAmount());
-	    		return item;
-	    	}
-	    	return null;
+	    	return itemShopReceived;
+	    }
+	    
+	    public void setItemShopReceived(ItemStack is){
+	    	itemShopReceived = is;
 	    }
 	    
 	    public boolean playerReceivedMoney(){
@@ -60,10 +92,11 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 
 	    public double getMoneyPlayerReceived(){
-	    	if(playerReceivedMoney()){
-	    		return shop.getPrice();
-	    	}
-	    	return 0;
+	    	return moneyPlayerReceived;
+	    }
+	    
+	    public void setMoneyPlayerReceived(double d){
+	    	moneyPlayerReceived = d;
 	    }
 	    
 	    public boolean shopReceivedMoney(){
@@ -71,10 +104,11 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 	    
 	    public double getMoneyShopReceived(){
-	    	if(shopReceivedMoney()){
-	    		return shop.getPrice();
-	    	}
-	    	return 0;
+	    	return moneyShopReceived;
+	    }
+	    
+	    public void setMoneyShopReceived(double d){
+	    	moneyShopReceived = d;
 	    }
 	    
 	    public HandlerList getHandlers() {
