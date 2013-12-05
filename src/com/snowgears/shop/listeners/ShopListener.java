@@ -1,11 +1,11 @@
 package com.snowgears.shop.listeners;
 
 import java.util.ArrayList;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -16,13 +16,16 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.inventory.InventoryAction;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.material.MaterialData;
+import org.bukkit.potion.Potion;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionType;
 import org.bukkit.block.Sign;
 
@@ -50,30 +53,174 @@ public class ShopListener implements Listener{
 	public void onPlayerShopExchange(PlayerShopExchangeEvent event){
 		if(event.isCancelled())
 			return;
+		//event is only called if both player and shop can complete transaction
+		Player player = event.getPlayer();
+		ShopObject shop = event.getShop();
 		
+		//TODO do not take or remove things from admin shops
+		//TODO make private method to display message to player. (use item name if not null, otherwise, material name)
+			
+			if(shop.getType() == ShopType.SELLING){
+				//remove item shop is selling to player
+				if(!shop.isAdminShop())
+					shop.getInventory().removeItem(event.getItemPlayerReceived());
+				//add item player purchased from the shop
+				HashMap<Integer, ItemStack> excess = player.getInventory().addItem(event.getItemPlayerReceived());
+				for (Map.Entry<Integer, ItemStack> me : excess.entrySet()) {
+					player.getWorld().dropItem(player.getLocation(), me.getValue());
+				}
+				
+				if(plugin.useVault){
+					//remove money from player
+					plugin.econ.withdrawPlayer(player.getName(), event.getMoneyShopReceived());
+					//pay that money to the shop
+					if(!shop.isAdminShop())
+						plugin.econ.depositPlayer(shop.getOwner(), event.getMoneyShopReceived());
+				}
+				//using item economy
+				else{
+					//remove item money from player
+					player.getInventory().removeItem(event.getItemShopReceived());
+					//pay that item money to the shop
+					if(!shop.isAdminShop())
+						shop.getInventory().addItem(event.getItemShopReceived());
+				}
+				
+			}
+			else if(shop.getType() == ShopType.BUYING){
+				//remove item player is selling to shop
+				player.getInventory().removeItem(event.getItemShopReceived());
+				//add the item being purchased by the shop to the shops inventory
+				if(!shop.isAdminShop())
+					shop.getInventory().addItem(event.getItemShopReceived());
+				
+				if(plugin.useVault){
+					//remove money from shop
+					if(!shop.isAdminShop())
+						plugin.econ.withdrawPlayer(shop.getOwner(), event.getMoneyPlayerReceived());
+					//pay that money to the player
+					plugin.econ.depositPlayer(player.getName(), event.getMoneyPlayerReceived());
+				}
+				//using item economy
+				else{
+					//remove item money from shop
+					if(!shop.isAdminShop())
+						shop.getInventory().removeItem(event.getItemPlayerReceived());
+					//pay that item money to the player
+					HashMap<Integer, ItemStack> excess = player.getInventory().addItem(event.getItemPlayerReceived());
+					for (Map.Entry<Integer, ItemStack> me : excess.entrySet()) {
+						player.getWorld().dropItem(player.getLocation(), me.getValue());
+					}
+				}
+			}
+			
+			player.updateInventory();
+			sendExchangeMessages(shop, player);
+	}
+	
+	private void sendExchangeMessages(ShopObject shop, Player player){
+		if(shop.getType() == ShopType.SELLING){
+			ItemStack itemPurchased = shop.getDisplayItem().getItemStack();
+			ItemMeta im = itemPurchased.getItemMeta();
+			String purchasedName;
+			if(im.getDisplayName() == null)
+				purchasedName = (itemPurchased.getType().name().replace("_", " ").toLowerCase())+"(s)";
+			else
+				purchasedName = im.getDisplayName()+"(s)";
+			player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+			
+			Player owner = Bukkit.getPlayer(shop.getOwner());
+			if(owner != null)
+				owner.sendMessage(ChatColor.GRAY+player.getName()+" bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+		}
+		else if(shop.getType() == ShopType.BUYING){
+			ItemStack itemSold = shop.getDisplayItem().getItemStack();
+			ItemMeta im = itemSold.getItemMeta();
+			String soldName;
+			if(im.getDisplayName() == null)
+				soldName = (itemSold.getType().name().replace("_", " ").toLowerCase())+"(s)";
+			else
+				soldName = im.getDisplayName()+"(s)";
+			player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+			
+			Player owner = Bukkit.getPlayer(shop.getOwner());
+			if(owner != null)
+				owner.sendMessage(ChatColor.GRAY+player.getName()+" sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+		}
 	}
 
-	//TODO if item putting into shop is different from shop item in any way, cancel action
-	//TODO also make sure to cancel InventoryDragEvent with the same thing
+	//cancel putting other items into shop
 	@EventHandler (priority = EventPriority.HIGHEST)
-	public void onClick(InventoryClickEvent event){
+	public void onClick(final InventoryClickEvent event){
 		if(!(event.getWhoClicked() instanceof Player)){
 			return;
 		}
-		Player player = (Player)event.getWhoClicked();
+		final Player player = (Player)event.getWhoClicked();
 		
 		ShopObject shop = getShopPlayerIsViewing(player);
 		if(shop == null)
 			return;
 		
-		if(!event.getCursor().getType().equals(Material.AIR)){ //have an item
-			if(event.getRawSlot() == event.getSlot()){ //trying to put in shop part of inventory
-				ItemStack cursor = event.getCursor();
-				if(!canPutItemInShop(shop, cursor, player)){
+		if(event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY){
+			//trying to put in shop part of inventory
+			if(event.getRawSlot() != event.getSlot()){
+				if(!canPutItemInShop(shop, event.getCurrentItem(), player)){
 					event.setCancelled(true);
 				}
 			}
 		}
+		//TODO once you cancel this one, the item on cursor becomes invisible. Try doing event.setCursor()
+		else if(!event.getCursor().getType().equals(Material.AIR)){ //have an item 
+			//trying to put in shop part of inventory
+			if(event.getRawSlot() == event.getSlot()){ 
+				ItemStack cursor = new ItemStack(event.getCursor());
+				if(!canPutItemInShop(shop, cursor, player)){
+					event.setCancelled(true);
+					event.setCursor(new ItemStack(Material.AIR));
+					player.getInventory().addItem(cursor);
+				}
+			}
+		}
+		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
+			public void run() { 
+				player.updateInventory();
+			}
+		}, 5L); 
+	}
+	
+	//cancel putting other items into shop
+	@EventHandler (priority = EventPriority.HIGHEST)
+	public void onDrag(final InventoryDragEvent event){
+		if(!(event.getWhoClicked() instanceof Player)){
+			return;
+		}
+		final Player player = (Player)event.getWhoClicked();
+		
+		ShopObject shop = getShopPlayerIsViewing(player);
+		if(shop == null)
+			return;
+		
+		boolean wasDraggedInShop = false;
+		for(int slot : event.getRawSlots()){
+			if(slot < 27){
+				wasDraggedInShop = true;
+				break;
+			}
+		}
+		if(!wasDraggedInShop)
+			return;
+		
+		ItemStack toPutInShop = event.getOldCursor();
+		boolean canPutInShop = canPutItemInShop(shop, toPutInShop, player);
+		
+		if(!canPutInShop){
+			event.setCancelled(true);
+		}
+		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
+			public void run() { 
+				player.updateInventory();
+			}
+		}, 5L); 
 	}
 	
 	@EventHandler (priority = EventPriority.HIGHEST)
@@ -138,8 +285,13 @@ public class ShopListener implements Listener{
 			player.sendMessage("");
 		}
 		if(di.getType() == Material.POTION){
-			PotionType potion = PotionType.getByDamageValue(di.getDurability());
-			player.sendMessage(ChatColor.AQUA+"Potion Type: "+ChatColor.WHITE+potion.name());
+			Potion potion = Potion.fromItemStack(di);
+			player.sendMessage(ChatColor.AQUA+"Potion Type: "+ChatColor.WHITE+ capitalize(potion.getType().name().replace("_", " ").toLowerCase()) + ChatColor.GRAY + ", Level "+potion.getLevel());
+			player.sendMessage(ChatColor.AQUA+"Potion Effects: ");
+			for(PotionEffect effect : potion.getEffects()){
+				player.sendMessage(ChatColor.WHITE+"   - "+ChatColor.LIGHT_PURPLE+capitalize(effect.getType().getName().replace("_", " ").toLowerCase())+effect.getAmplifier()+ChatColor.GRAY+ " ("+convertDurationToString(effect.getDuration())+")");
+				System.out.println(effect.getDuration());
+			}
 		}
 		player.sendMessage("");
 		if(shop.getType() == ShopType.SELLING){
@@ -158,6 +310,23 @@ public class ShopListener implements Listener{
 		}
 		player.sendMessage("");
 		return;
+	}
+	
+	private String convertDurationToString(int duration){
+		duration = duration/20;
+		if(duration < 10)
+			return "0:0"+duration;
+		else if(duration < 60)
+			return "0:"+duration;
+		double mins = duration/60;
+		double secs = (mins - (int)mins);
+		secs = (double)Math.round(secs * 100000) / 100000; //round to 2 decimal places
+		if(secs == 0)
+			return (int)mins+":00";
+		else if(secs < 10)
+			return (int)mins+":0"+(int)secs;
+		else
+			return (int)mins+":"+(int)secs;
 	}
 	
 	@EventHandler (priority = EventPriority.MONITOR)
@@ -244,506 +413,17 @@ public class ShopListener implements Listener{
 		}
 	}
 	
-	//TODO find out whats different about this method from non-econ one and merge the two
-//	@EventHandler
-//	public void onSignEditEcon(SignChangeEvent event){
-//		if(plugin.econ == null)
-//			return;
-//		Block b = event.getBlock();
-//		Player player = event.getPlayer();
-//		final org.bukkit.material.Sign sign = (org.bukkit.material.Sign)b.getState().getData();
-//		if(sign.isWallSign() == true)
-//			return;
-//		Block relBlock = b.getRelative(sign.getFacing().getOppositeFace());
-//
-//		double price = 0;
-//		int amount = 0;
-//		boolean isSelling = true;
-//		if(relBlock.getType() == Material.CHEST){
-//			final Sign signBlock = (Sign)b.getState();
-//			if(event.getLine(0).equals("[shop]")){
-//					
-//				if(plugin.usePerms && ! (player.hasPermission("plugin.create"))){
-//					event.setCancelled(true);
-//					player.sendMessage(ChatColor.RED+"You are not authorized to create shops.");
-//					return;
-//				}
-//				
-//					if(isInteger(event.getLine(1)) == true){
-//						amount = Integer.parseInt(event.getLine(1));
-//						if(amount < 1){
-//							player.sendMessage(ChatColor.RED+"The amount (line 2) needs to be positive.");
-//							return;
-//						}
-//					}
-//					else{
-//						player.sendMessage(ChatColor.RED+"The amount (line 2) needs to be a number.");
-//						return;
-//					}
-//					
-//					if(isDouble(event.getLine(2)) == true){
-//						price = Double.parseDouble(event.getLine(2));
-//						if(price <= 0){
-//							player.sendMessage(ChatColor.RED+"The price (line 3) needs to be positive.");
-//							return;
-//						}
-//					}
-//					else{
-//						player.sendMessage(ChatColor.RED+"The price (line 3) needs to be a number.");
-//						return;
-//					}
-//
-//					if(event.getLine(3).toLowerCase().contains("b"))
-//						isSelling = false;
-//					else
-//						isSelling = true;
-//					
-//					boolean isAdmin = false;
-//					if(event.getLine(3).toLowerCase().contains("admin"))
-//						if(player.isOp() || (plugin.usePerms && player.hasPermission("plugin.operator")))
-//							isAdmin = true;
-//
-//					signBlock.update(true);
-//					
-//					relBlock.getRelative(sign.getFacing()).setTypeId(Material.WALL_SIGN.getId());
-//					
-//					final Sign newSign = (Sign)relBlock.getRelative(sign.getFacing()).getState();
-//					newSign.setLine(0, ChatColor.BOLD+event.getLine(0));
-//					if(isSelling)
-//						newSign.setLine(1, "Selling: "+ChatColor.BOLD+ amount);
-//					else
-//						newSign.setLine(1, "Buying: "+ChatColor.BOLD+ amount);
-//					newSign.setLine(2, ChatColor.RED+""+ price +" "+ plugin.economyItemName);
-//					
-//					if(isAdmin)
-//						newSign.setLine(3, "admin");
-//					else
-//						newSign.setLine(3, "");
-//	
-//					org.bukkit.material.Sign matSign = new org.bukkit.material.Sign(Material.WALL_SIGN);
-//					matSign.setFacingDirection(sign.getFacing());
-//					
-//					newSign.setData(matSign);
-//					newSign.update();
-//					
-//					ArrayList<Double> values = new ArrayList<Double>();
-//					values.add(price);
-//					values.add((double)amount);
-//					setValues(newSign.getLocation(), values);
-//					
-//					if(isSelling)
-//						player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with whatever item you want to sell!");
-//					else
-//						player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with whatever item you want to buy!");
-//					invincibleSigns.add(newSign.getLocation());
-//			}
-//		}
-//	}
-	
-//	@EventHandler
-//	public void onBlockClick(PlayerInteractEvent event){
-//		if(event.isCancelled()){
-//			return;
-//		}
-//		final Player player = event.getPlayer();
-//		
-//		if(event.getAction() == Action.LEFT_CLICK_BLOCK){
-//			final Block clicked = event.getClickedBlock();
-//			
-//			if(clicked.getType() == Material.WALL_SIGN){
-//				if(getValues(clicked.getLocation()) != null){
-//					if(plugin.usePerms && ! (player.hasPermission("plugin.create"))){
-//						event.setCancelled(true);
-//						player.sendMessage(ChatColor.RED+"You are not authorized to create shops.");
-//						return;
-//					}
-//					ArrayList<Double> values = getValues(clicked.getLocation());
-//					
-//					if(player.getItemInHand().getType() == Material.AIR){
-//						player.sendMessage(ChatColor.RED+"You must be holding an item!");
-//						return;
-//					}
-//					Sign sign = (Sign)clicked.getState();
-//					
-//					boolean isSelling = true;
-//					if(sign.getLine(1).isEmpty() || sign.getLine(1).substring(0, 1).equalsIgnoreCase("b"))
-//						isSelling = false;
-//					
-//					boolean isAdmin = false;
-//					if(sign.getLine(3).equals("admin")){
-//						if(player.isOp() || (plugin.usePerms && player.hasPermission("plugin.operator"))){
-//							isAdmin = true;
-//							player.sendMessage(ChatColor.GRAY+"You have made an admin plugin.");
-//						}
-//					}
-//					String owner = player.getName();
-//					if(isAdmin == false)
-//						sign.setLine(3, player.getName());
-//					else
-//						owner = "admin";
-//
-//					org.bukkit.material.Sign s = (org.bukkit.material.Sign)clicked.getState().getData();
-//					Block chest = clicked.getRelative(s.getAttachedFace());
-//					final ShopObject shop = new ShopObject(new SerializableLocation(chest.getLocation()), 
-//							new SerializableLocation(clicked.getLocation()),
-//							new SerializableLocation(chest.getLocation().clone().add(0.5,1.2,0.5)),
-//							owner,
-//							player.getItemInHand(),
-//							values.get(0),
-//							values.get(1).intValue(), 
-//							isSelling,
-//							isAdmin);
-//					allShops.add(shop);
-//					
-//					sign.setLine(2, ChatColor.GREEN+""+ plugin.getPrice() +" "+ plugin.economyItemName);
-//					sign.update(true);
-//					
-//					plugin.shopMap.put("load", allShops);
-//					plugin.saveHashMapTo(plugin.shopMap, plugin.shopFile);
-//					
-////					plugin.getDisplayItem().respawn();
-//					
-//					if(isSelling)
-//						player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that sells "+ChatColor.GOLD+ plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+ChatColor.YELLOW+".");
-//					else
-//						player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that buys "+ChatColor.GOLD+plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+ChatColor.YELLOW+".");
-//					
-//					setValues(clicked.getLocation(), null);
-//					
-//					if(invincibleSigns.contains(clicked.getLocation())){
-//						plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
-//							public void run() { 
-//								invincibleSigns.remove(clicked.getLocation());
-//								//i.teleport(plugin.showcaseLocation.deserialize());
-//								} 
-//						}, 40); //2 seconds 
-//					}
-//
-//				}
-//			}
-//		}
-	//TODO put these in miscListener separately and make them call corresponding custom events
-//		else if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
-//			Block clicked = event.getClickedBlock();
-//			
-//			if(clicked.getType() == Material.CHEST){
-//				Chest chest = (Chest)clicked.getState();
-//				InventoryHolder ih = chest.getInventory().getHolder();
-//				
-//				if(ih instanceof DoubleChest){
-//					DoubleChest dchest = (DoubleChest)ih;
-//					Chest chestLeft = (Chest)dchest.getLeftSide();
-//					Chest chestRight = (Chest)dchest.getRightSide();
-//					
-//					for(ShopObject shop : allShops){
-//						if(plugin.getLocation().equals(chestLeft.getLocation()) || plugin.getLocation().equals(chestRight.getLocation())){
-//							//player clicked on shop that was not their own
-//							if(!plugin.getOwner().equals(player.getName())){
-//								if(player.isOp() || (plugin.usePerms && player.hasPermission("plugin.operator"))){
-//									player.sendMessage(ChatColor.GRAY+"You are opening a shop owned by "+plugin.getOwner());
-//									return;
-//								}
-//								event.setCancelled(true);
-//								player.sendMessage(ChatColor.RED+"You must right click the sign to use this plugin.");
-//								return;
-//							}
-//						}
-//					}
-//				}
-//				else{
-//					for(ShopObject shop : allShops){
-//						if(plugin.getLocation().equals(chest.getLocation())){
-//							//player clicked on shop that was not their own
-//							if(!plugin.getOwner().equals(player.getName())){
-//								if(player.isOp() || (plugin.usePerms && player.hasPermission("plugin.operator"))){
-//									player.sendMessage(ChatColor.GRAY+"You are opening a shop owned by "+plugin.getOwner());
-//									return;
-//								}
-//								event.setCancelled(true);
-//								player.sendMessage(ChatColor.RED+"You must right click the sign to use this plugin.");
-//								return;
-//							}
-//						}
-//					}
-//				}
-//			}
-	
-//			else if(clicked.getType() == Material.WALL_SIGN && plugin.econ==null){
-//				for(ShopObject shop : allShops){
-//					//left clicked on a different shop
-//					if(plugin.getSignLocation().equals(clicked.getLocation())){
-//						
-//						if(plugin.usePerms && ! (player.hasPermission("plugin.use"))){
-//							event.setCancelled(true);
-//							player.sendMessage(ChatColor.RED+"You are not authorized to use shops.");
-//							return;
-//						}
-//						
-//						//player clicked on shop that was not their own
-//						if(!plugin.getOwner().equals(player.getName())){
-//							if(plugin.isSellingShop()){
-//								ItemStack itemPrice = new ItemStack(plugin.economyItemId);
-//							
-//								if(!player.getInventory().containsAtLeast(itemPrice, (int)plugin.getPrice())){
-//									player.sendMessage(ChatColor.RED+"You do not have enough "+ plugin.economyItemName+" to buy from this plugin.");
-//									return;
-//								}
-//								
-//								if(plugin.isAdminShop()){
-//									itemPrice.setAmount((int)plugin.getPrice());
-//									ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), plugin.getAmount(), plugin.getDisplayItem().getData());
-//									player.getInventory().removeItem(itemPrice);
-//									player.getInventory().addItem(item);
-//									player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//									player.updateInventory();
-//									return;
-//								}
-//								
-//								Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//								ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), 1, plugin.getDisplayItem().getData());
-//								if(!chest.getInventory().containsAtLeast(item, plugin.getAmount())){
-//									player.sendMessage(ChatColor.RED+"This shop is out of stock.");
-//									return;
-//								}
-//								Player owner = Bukkit.getPlayer(plugin.getOwner());
-//								if(owner != null)
-//									owner.sendMessage(ChatColor.GRAY+player.getName()+" bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString()+" from you for "+ChatColor.GOLD+plugin.getPrice()+plugin.economyItemName+".");
-//									
-//								itemPrice.setAmount((int)plugin.getPrice());
-//								item.setAmount(plugin.getAmount());
-//								player.getInventory().removeItem(itemPrice);
-//								HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(item);
-//			                    if (!leftOver.isEmpty()) 
-//			                        player.getWorld().dropItem(player.getLocation(), new ItemStack(Material.getMaterial(leftOver.get(0).getTypeId()), leftOver.get(0).getAmount()));
-//								chest.getInventory().removeItem(item);
-//								chest.getInventory().addItem(itemPrice);
-//								player.updateInventory();
-//								player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//								return;
-//							}
-//							else{
-//								ItemStack itemPrice = new ItemStack(plugin.economyItemId);
-//								
-//								ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), 1, plugin.getDisplayItem().getData());
-//								if(!player.getInventory().containsAtLeast(item, plugin.getAmount())){
-//									player.sendMessage(ChatColor.RED+"You do not have enough "+ plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+" to sell to this plugin.");
-//									return;
-//								}
-//								
-//								if(plugin.isAdminShop()){
-//									itemPrice.setAmount((int)plugin.getPrice());
-//									item.setAmount(plugin.getAmount());
-//									player.getInventory().removeItem(item);
-//									HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(itemPrice);
-//				                    if (!leftOver.isEmpty()) 
-//				                        player.getWorld().dropItem(player.getLocation(), new ItemStack(Material.getMaterial(leftOver.get(0).getTypeId()), leftOver.get(0).getAmount()));
-//									player.updateInventory();
-//									player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//									return;
-//								}
-//								
-//								Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//								if(!chest.getInventory().containsAtLeast(itemPrice, (int)plugin.getPrice())){
-//									player.sendMessage(ChatColor.RED+"This shop is out of funds.");
-//									return;
-//								}
-//								if(chest.getInventory().firstEmpty() == -1){
-//									player.sendMessage(ChatColor.RED+"This chest is currently too full to sell to.");
-//									return;
-//								}
-//		
-//								Player owner = Bukkit.getPlayer(plugin.getOwner());
-//								if(owner != null)
-//									owner.sendMessage(ChatColor.GRAY+player.getName()+" sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString()+" to you for "+ChatColor.GOLD+plugin.getPrice()+plugin.economyItemName+".");
-//									
-//								itemPrice.setAmount((int)plugin.getPrice());
-//								item.setAmount(plugin.getAmount());
-//								chest.getInventory().removeItem(itemPrice);
-//								chest.getInventory().addItem(item);
-//								player.getInventory().removeItem(item);
-//								HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(itemPrice);
-//			                    if (!leftOver.isEmpty()) 
-//			                        player.getWorld().dropItem(player.getLocation(), new ItemStack(Material.getMaterial(leftOver.get(0).getTypeId()), leftOver.get(0).getAmount()));
-//								player.updateInventory();
-//								player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+" to "+plugin.getOwner()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//								return;
-//							}
-//						}
-//						//the player has clicked on their own shop
-//						else{
-//							Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//							
-//							if(plugin.isSellingShop()){
-//								int amountOfMoney = getAmount(chest.getInventory(), plugin.economyItemId);
-//								player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfMoney+ChatColor.GRAY+" "+plugin.economyItemName+".");
-//							}
-//							else{
-//								int amountOfItems = getAmount(chest.getInventory(), plugin.getDisplayItem().getType().getId(), plugin.getDisplayItem().getData());
-//								player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfItems+ChatColor.GRAY+" "+plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+".");
-//							}
-//						}
-//					}
-//					
-//				}
-//				player.updateInventory();
-//			}
-//			else if(clicked.getType() == Material.WALL_SIGN && plugin.econ != null){
-//				for(ShopObject shop : allShops){
-//					//left clicked on a different shop
-//					if(plugin.getSignLocation().equals(clicked.getLocation())){
-//						
-//						if(plugin.usePerms && ! (player.hasPermission("plugin.use"))){
-//							event.setCancelled(true);
-//							player.sendMessage(ChatColor.RED+"You are not authorized to use shops.");
-//							return;
-//						}
-//						
-//						//player clicked on shop that was not their own
-//						if(!plugin.getOwner().equals(player.getName())){
-//							if(plugin.isSellingShop()){
-//								double balance = plugin.econ.getBalance(player.getName());
-//								
-//								if(balance < plugin.getPrice()){
-//									player.sendMessage(ChatColor.RED+"You do not have enough "+ plugin.economyItemName+" to buy from this plugin.");
-//									return;
-//								}
-//								
-//								if(plugin.isAdminShop()){
-//									ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), plugin.getAmount(), plugin.getDisplayItem().getData());
-//									HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(item);
-//				                    if (!leftOver.isEmpty()) 
-//				                        player.getWorld().dropItem(player.getLocation(), new ItemStack(Material.getMaterial(leftOver.get(0).getTypeId()), leftOver.get(0).getAmount()));
-//									plugin.econ.withdrawPlayer(player.getName(), plugin.getPrice());
-//									player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//									return;
-//								}
-//								
-//								Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//								ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), 1, plugin.getDisplayItem().getData());
-//								if(!chest.getInventory().containsAtLeast(item, plugin.getAmount())){
-//									player.sendMessage(ChatColor.RED+"This shop is out of stock.");
-//									return;
-//								}
-//
-//								item.setAmount(plugin.getAmount());
-//								EconomyResponse r = plugin.econ.withdrawPlayer(player.getName(), plugin.getPrice());
-//					            if(r.transactionSuccess()) 
-//					            	player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName +".");
-//					            else 
-//					                player.sendMessage(String.format("An error occured: %s", r.errorMessage));
-//
-//					            HashMap<Integer, ItemStack> leftOver = player.getInventory().addItem(item);
-//			                    if (!leftOver.isEmpty()) 
-//			                        player.getWorld().dropItem(player.getLocation(), new ItemStack(Material.getMaterial(leftOver.get(0).getTypeId()), leftOver.get(0).getAmount()));
-//								chest.getInventory().removeItem(item);
-//								
-//								EconomyResponse er = plugin.econ.depositPlayer(plugin.getOwner(), plugin.getPrice());
-//					            if(er.transactionSuccess()){ 
-//					            	Player p = Bukkit.getPlayer(plugin.getOwner());
-//					            	if(p != null)
-//					            		p.sendMessage(ChatColor.GRAY+player.getName()+" bought "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString()+" from you for "+ChatColor.GOLD+plugin.getPrice()+plugin.economyItemName+".");
-//					            }
-//					            else 
-//					                System.out.println(String.format("An error occured: %s", er.errorMessage));
-//
-//								player.updateInventory();
-//								return;
-//							}
-//							else{
-//								double balance = plugin.econ.getBalance(plugin.getOwner());	
-//								
-//								ItemStack item = new ItemStack(plugin.getDisplayItem().getType(), 1, plugin.getDisplayItem().getData());
-//								if(!player.getInventory().containsAtLeast(item,plugin.getAmount())){
-//									player.sendMessage(ChatColor.RED+"You do not have enough "+ plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+" to sell to this plugin.");
-//									return;
-//								}
-//								
-//								if(plugin.isAdminShop()){
-//									item.setAmount(plugin.getAmount());
-//									player.getInventory().removeItem(item);
-//									plugin.econ.depositPlayer(player.getName(), plugin.getPrice());
-//									player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString().replace("_", " ").toLowerCase()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//									return;
-//								}
-//								
-//								if(balance < plugin.getPrice()){
-//									player.sendMessage(ChatColor.RED+"This shop's owner is out of funds.");
-//									return;
-//								}
-//									
-//								EconomyResponse r = plugin.econ.withdrawPlayer(plugin.getOwner(), plugin.getPrice());
-//					            if(r.transactionSuccess()){ 
-//					            	Player owner = Bukkit.getPlayer(plugin.getOwner());
-//									if(owner != null)
-//										owner.sendMessage(ChatColor.GRAY+player.getName()+" sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().toString()+" to you for "+ChatColor.GOLD+plugin.getPrice()+plugin.economyItemName+".");
-//					            }
-//					            else 
-//					                System.out.println(String.format("An error occured: %s", r.errorMessage));
-//					            
-//					            Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//					            
-//					            if(chest.getInventory().firstEmpty() == -1){
-//									player.sendMessage(ChatColor.RED+"This chest is currently too full to sell to.");
-//									return;
-//								}
-//					            
-//								item.setAmount(plugin.getAmount());
-//								chest.getInventory().addItem(item);
-//								player.getInventory().removeItem(item);
-//								
-//								EconomyResponse er = plugin.econ.depositPlayer(player.getName(), plugin.getPrice());
-//					            if(er.transactionSuccess()){ 
-//					            	player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.GOLD+ plugin.getAmount() +" "+ChatColor.GRAY+plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+" to "+plugin.getOwner()+" for "+ChatColor.GOLD+plugin.getPrice()+" "+ plugin.economyItemName+".");
-//					            }
-//					            else 
-//					                System.out.println(String.format("An error occured: %s", er.errorMessage));
-//					            
-//								player.updateInventory();
-//								return;
-//							}
-//						}
-//						//the player has clicked on their own shop
-//						else{
-//							Chest chest = (Chest)clicked.getRelative(((org.bukkit.material.Sign) clicked.getState().getData()).getAttachedFace()).getState();
-//							
-//							if(plugin.isSellingShop() && plugin.econ == null){
-//								int amountOfMoney = getAmount(chest.getInventory(), plugin.economyItemId);
-//								player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfMoney+ChatColor.GRAY+" "+plugin.economyItemName+".");
-//							}
-//							else if(plugin.isSellingShop() == false){
-//								int amountOfItems = getAmount(chest.getInventory(), plugin.getDisplayItem().getType().getId(), plugin.getDisplayItem().getData());
-//								player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfItems+ChatColor.GRAY+" "+plugin.getDisplayItem().getType().name().replace("_", " ").toLowerCase()+".");
-//							}
-//						}
-//					}
-//					
-//				}
-//			}
-//			player.updateInventory();
-//		}
-//	}
-
-	//TODO make these call player destroy shop event
-	//DEALS WITH THE DESTRUCTION OF SHOPS AND THEIR SIGNS
-	
-	
-//	//TODO method for getting all matching items in chest inventory
-//	public void buyFromShop(Player player, ShopObject shop){
-//		ItemStack di = shop.getDisplayItem().getItemStack();
-//		ItemStack item = new ItemStack(di.getType(), shop.getAmount(), di.getMaterialData().getData());
-//		item.setDurability(di.getDurability());
-//	
-//	}
-	
 	public boolean canPutItemInShop(ShopObject shop, ItemStack item, Player p){
+		if(!plugin.useVault){
+			if(item.getType() == plugin.economyMaterial)
+				return true;
+		}
 		ItemStack di = shop.getDisplayItem().getItemStack();
 		
 		if(item.getType() != di.getType()){
 			p.sendMessage(ChatColor.GRAY+"This item's type does not match the shop's item's type.");
 			return false;
 		}
-		System.out.println("Item data: "+item.getData().getData());
-		System.out.println("Display item data: "+di.getData());
 		if(! item.getData().equals(di.getData())){
 			p.sendMessage(ChatColor.GRAY+"This item's data-type does not match the shop's item's data-type.");
 			return false;
@@ -755,10 +435,6 @@ public class ShopListener implements Listener{
 
 		ItemMeta itemMeta = item.getItemMeta();
 		ItemMeta displayItemMeta = di.getItemMeta();
-		//one of the items is named
-//		p.sendMessage("Item name: "+im.getDisplayName());
-//		p.sendMessage("DisplayItem name: "+di.getDisplayName());
-//		p.sendMessage("DisplayItem isNamed: "+di.hasCustomName());
 		if(!(itemMeta.equals(displayItemMeta))){
 	    	p.sendMessage(ChatColor.GRAY+"This item's name and/or lore do not match the shop's item's name and/or lore.");
 			return false;
@@ -767,38 +443,9 @@ public class ShopListener implements Listener{
         	p.sendMessage(ChatColor.GRAY+"This item's enchantments do not match the shop's item's enchantments.");
         	return false;
         }
-        
-        //TODO check if its a potion and then check values
         return true;
 	}
-	
-	
-//	public ArrayList<ShopObject> getAllShopsInChunk(Chunk chunk){
-//		ArrayList<ShopObject> shops = new ArrayList<ShopObject>();
-//		
-//		for(ShopObject shop : allShops){
-//			if(plugin.getLocation().getChunk().equals(chunk))
-//				shops.add(shop);
-//		}
-//		return shops;
-//	}
-	
-	//get amount of itemstack in shop
-	public int getAmount(Inventory inventory, ItemStack is)
-	{
-		MaterialData md = is.getData();
-       	ItemStack[] items = inventory.getContents();
-        int has = 0;
-        for (ItemStack item : items)
-        {
-            if ((item != null) && (item.getAmount() > 0) && (item.getData().equals(md)))
-            {
-                has += item.getAmount();
-            }
-        }
-        return has;
-	}
-	
+
 	public ShopObject getShopPlayerIsViewing(Player player){
 		if(playersViewingShops.containsKey(player.getName())){
 			return playersViewingShops.get(player.getName());

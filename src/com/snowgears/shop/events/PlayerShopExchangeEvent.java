@@ -6,6 +6,7 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.bukkit.inventory.ItemStack;
 
+import com.snowgears.shop.Shop;
 import com.snowgears.shop.ShopObject;
 import com.snowgears.shop.ShopType;
 
@@ -25,16 +26,26 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 			shop = s;
 			
 			if(playerReceivedItem()){
-				itemPlayerReceived = shop.getDisplayItem().getItemStack();
-				itemPlayerReceived.setAmount(shop.getAmount());
+				if(shop.getType() == ShopType.SELLING){
+					itemPlayerReceived = shop.getDisplayItem().getItemStack();
+					itemPlayerReceived.setAmount(shop.getAmount());
+				}
+				else if(shop.getType() == ShopType.BUYING){
+					itemPlayerReceived = new ItemStack(Shop.plugin.economyMaterial, (int)shop.getPrice());
+				}
 			}
 			else{
 				itemPlayerReceived = null;
 			}
 			
 			if(shopReceivedItem()){
-				itemShopReceived = shop.getDisplayItem().getItemStack();
-				itemShopReceived.setAmount(shop.getAmount());
+				if(shop.getType() == ShopType.SELLING){
+					itemShopReceived = new ItemStack(Shop.plugin.economyMaterial, (int)shop.getPrice());
+				}
+				else if(shop.getType() == ShopType.BUYING){
+					itemShopReceived = shop.getDisplayItem().getItemStack();
+					itemShopReceived.setAmount(shop.getAmount());
+				}
 	    	}
 			else{
 				itemShopReceived = null;
@@ -64,52 +75,52 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 	    
 	    public boolean playerReceivedItem(){
-	    	return (shop.getType() == ShopType.SELLING || shop.getType() == ShopType.BARTER);
+	    	return (shop.getType() == ShopType.SELLING || (shop.getType() == ShopType.BUYING && Shop.plugin.econ == null));
 	    }
 	    
 	    public ItemStack getItemPlayerReceived(){
 	    	return itemPlayerReceived;
 	    }
 	    
-	    public void setItemPlayerReceived(ItemStack is){
-	    	itemPlayerReceived = is;
-	    }
+//	    public void setItemPlayerReceived(ItemStack is){
+//	    	itemPlayerReceived = is;
+//	    }
 	    
 	    public boolean shopReceivedItem(){
-	    	return shop.getType() == ShopType.BUYING;
+	    	return shop.getType() == ShopType.BUYING || (shop.getType() == ShopType.SELLING && Shop.plugin.econ == null);
 	    }
 
 	    public ItemStack getItemShopReceived() {
 	    	return itemShopReceived;
 	    }
 	    
-	    public void setItemShopReceived(ItemStack is){
-	    	itemShopReceived = is;
-	    }
+//	    public void setItemShopReceived(ItemStack is){
+//	    	itemShopReceived = is;
+//	    }
 	    
 	    public boolean playerReceivedMoney(){
-	    	return shop.getType() == ShopType.SELLING;
+	    	return shop.getType() == ShopType.BUYING && Shop.plugin.econ != null;
 	    }
 
 	    public double getMoneyPlayerReceived(){
 	    	return moneyPlayerReceived;
 	    }
 	    
-	    public void setMoneyPlayerReceived(double d){
-	    	moneyPlayerReceived = d;
-	    }
+//	    public void setMoneyPlayerReceived(double d){
+//	    	moneyPlayerReceived = d;
+//	    }
 	    
 	    public boolean shopReceivedMoney(){
-	    	return shop.getType() == ShopType.BUYING;
+	    	return shop.getType() == ShopType.SELLING && Shop.plugin.econ != null;
 	    }
 	    
 	    public double getMoneyShopReceived(){
 	    	return moneyShopReceived;
 	    }
 	    
-	    public void setMoneyShopReceived(double d){
-	    	moneyShopReceived = d;
-	    }
+//	    public void setMoneyShopReceived(double d){
+//	    	moneyShopReceived = d;
+//	    }
 	    
 	    public HandlerList getHandlers() {
 	        return handlers;

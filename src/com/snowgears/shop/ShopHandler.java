@@ -142,6 +142,7 @@ public class ShopHandler {
 				type = "admin ";
 			type = type + s.getType().getName();
 			config.set("shops."+s.getOwner()+"."+shopNumber+".type", type);
+			config.set("shops."+s.getOwner()+"."+shopNumber+".timesUsed", s.getTimesUsed());
 			
 			ItemStack displayStack = s.getDisplayItem().getItemStack();
 			ItemMeta im = displayStack.getItemMeta();
@@ -156,9 +157,7 @@ public class ShopHandler {
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", im.getLore().toString());
 			else
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", "[]");
-			System.out.println(allShops.size());
 			s.delete();
-			System.out.println(allShops.size());
 			
 			shopNumber++;
 			//reset shop number if next shop has a different owner
@@ -185,30 +184,29 @@ public class ShopHandler {
 		File shopFile = new File(fileDirectory + "/shops.yml");
 		if(! shopFile.exists())
 			return;
-		if(shopFile.length() > 0){ //file contains something
-			File backupShopFile = new File(fileDirectory + "/shopsBackup.yml");
-			if(! backupShopFile.exists()){
-				try {
-					backupShopFile.createNewFile();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-			PrintWriter writer = null;
+		File backupShopFile = new File(fileDirectory + "/shopsBackup.yml");
+		if(! backupShopFile.exists()){
 			try {
-				writer = new PrintWriter(backupShopFile);
-			} catch (FileNotFoundException e) {
+				backupShopFile.createNewFile();
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			writer.print("");
-			writer.close(); //clear contents of the backup file
 			
+		//shopFile is empty and backup is not
+		if(backupShopFile.length() > 0 && shopFile.length() == 0){
+			try {
+				copyFile(backupShopFile, shopFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+		else{
 			try {
 				copyFile(shopFile, backupShopFile); //make a backup of the file before loading in case of corruption
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-
+		}
 		}
 		
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(shopFile);
@@ -233,19 +231,24 @@ public class ShopHandler {
 				if(type.contains("admin"))
 					isAdmin = true;
 				ShopType shopType = typeFromString(type);
+				int timesUsed = config.getInt("shops."+shopOwner+"."+shopNumber+".timesUsed");
 				
 				MaterialData data = dataFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.data"));
 				ItemStack is = new ItemStack(data.getItemType());
 				is.setData(data);
+				short durability = (short)(config.getInt("shops."+shopOwner+"."+shopNumber+".item.durability"));
+				is.setDurability(durability);
 				ItemMeta im = is.getItemMeta();
 				String name = config.getString("shops."+shopOwner+"."+shopNumber+".item.name");
 				if(!name.isEmpty())
 					im.setDisplayName(config.getString("shops."+shopOwner+"."+shopNumber+".item.name"));
-				im.setLore(loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore")));
+				List<String> lore = loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore"));
+				if(lore.size() > 1)
+					im.setLore(loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore")));
 				is.setItemMeta(im);
-				is.addEnchantments(enchantmentsFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.enchantments")));
+				is.addUnsafeEnchantments(enchantmentsFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.enchantments")));
 				
-				ShopObject shop = new ShopObject(loc, signLoc, shopOwner, is, price, amount, isAdmin, shopType);
+				ShopObject shop = new ShopObject(loc, signLoc, shopOwner, is, price, amount, isAdmin, shopType, timesUsed);
 				shop.updateSign();
 				this.addShop(shop);
 			}
