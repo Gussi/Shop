@@ -2,11 +2,7 @@
 /.classpath
 /.project
 /.settings
-<<<<<<< HEAD
-=======
 /bin
-*.class
->>>>>>> eeda1e5c2ef835ee47a456869e5ffea0330f24f5
 
 # Mac filesystem dust
 .DS_Store
