@@ -1,5 +1,7 @@
 # Thanks for downloading Shop! #
-# If you enjoy the plugin, let me know! I would love to hear from you! #
+#——————————————————————————————#
+
+AUTO-UPDATE: true
 
 usePermissions: false
 
@@ -9,7 +11,7 @@ usePermissions: false
 Economy:
    useVault: false
    itemCurrency (non-vault): EMERALD
-   displayName: Rupee(s)
+   displayName: Rupee
    currencyToStartWith: 0
 
 

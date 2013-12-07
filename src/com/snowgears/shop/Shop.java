@@ -18,6 +18,8 @@ import com.snowgears.shop.listeners.DisplayItemListener;
 import com.snowgears.shop.listeners.MiscListener;
 import com.snowgears.shop.listeners.ShopListener;
 import com.snowgears.shop.utils.Metrics;
+import com.snowgears.shop.utils.Updater;
+import com.snowgears.shop.utils.Updater.UpdateResult;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -55,7 +57,7 @@ public class Shop extends JavaPlugin{
 		    // Failed to submit the stats
 		}
 
-		File configFile = new File(this.getDataFolder() + "/config.yml");
+		final File configFile = new File(this.getDataFolder() + "/config.yml");
 		if(!configFile.exists())
 		{
 		  this.saveDefaultConfig();
@@ -70,11 +72,28 @@ public class Shop extends JavaPlugin{
 				getServer().getConsoleSender().sendMessage("[Shop]"+ChatColor.RED+" Data folder could not be created.");
 			}
 		}
+		
+		Updater updater;
+		boolean autoUpdate = getConfig().getBoolean("AUTO-UPDATE");
+		if(autoUpdate)
+			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.DEFAULT, true);
+		else
+			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.NO_DOWNLOAD, true);
+		
+		if(updater.getResult() == UpdateResult.SUCCESS){
+			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() { 
+				public void run() { 
+					configFile.delete();
+					getServer().reload();
+				}
+			}, 1L); 
+		}
+
 
 		usePerms = getConfig().getBoolean("usePermissions");
 		useVault = getConfig().getConfigurationSection("Economy").getBoolean("useVault");
 		economyMaterial = Material.getMaterial(getConfig().getConfigurationSection("Economy").getString("itemCurrency (non-vault)"));
-		economyDisplayName = getConfig().getConfigurationSection("Economy").getString("displayName");
+		economyDisplayName = getConfig().getConfigurationSection("Economy").getString("displayName")+"(s)";
 		currencyToStart = getConfig().getConfigurationSection("Economy").getInt("currencyToStartWith");
 		durabilityMargin = getConfig().getInt("maxDurabilityMargin");
 		
