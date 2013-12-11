@@ -9,6 +9,7 @@ import net.milkbowl.vault.economy.EconomyResponse;
 
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
+import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -43,7 +44,6 @@ import com.snowgears.shop.events.PlayerShopExchangeEvent;
 public class MiscListener implements Listener{
 
 	public Shop plugin = Shop.plugin;
-	ArrayList<Location> invincibleSigns = new ArrayList<Location>();
 
 	public MiscListener(Shop instance)
     {
@@ -220,72 +220,86 @@ public class MiscListener implements Listener{
 			final Block clicked = event.getClickedBlock();
 			
 			if(clicked.getType() == Material.WALL_SIGN){
-				if(plugin.shopListener.getValues(clicked.getLocation()) != null){
-					if(plugin.usePerms && ! (player.hasPermission("shop.create"))){
-						event.setCancelled(true);
-						player.sendMessage(ChatColor.RED+"You are not authorized to create shops.");
-						return;
+				if(!plugin.shopListener.signsAwaitingItems.containsKey(clicked.getLocation())){
+					return;
+				}
+				if(plugin.usePerms && ! (player.hasPermission("shop.create"))){
+					event.setCancelled(true);
+					player.sendMessage(ChatColor.RED+"You are not authorized to create shops.");
+					return;
+				}
+				final Sign sign = (Sign)clicked.getState();
+				
+				int amount = Integer.parseInt(sign.getLine(1).substring(sign.getLine(1).lastIndexOf(":")+4, sign.getLine(1).length()));
+				double price = Double.parseDouble(sign.getLine(2).substring(2, sign.getLine(2).indexOf(" ")));
+				
+				if(player.getItemInHand().getType() == Material.AIR){
+					player.sendMessage(ChatColor.RED+"You must be holding an item!");
+//					if(sign.getLine(1).contains("Buying")){
+//						player.setGameMode(GameMode.CREATIVE);
+//						//add to hashmap playersInCreativeMenu<String Name, GameMode oldGameMode>
+//						player.openInventory(player.getInventory());
+//						//listen on inventoryClick, if player is in hashmap, cancel click, save item in new hashmap chosenCreativeItem<String name, ItemStack>
+//						//player.closeInventory();
+//						//set gamemode back to what it was to start
+//					}
+//					else if(sign.getLine(1).contains("Bartering")){
+//						//TODO
+//						//set player to creative, open inventory, let player choose item(may be first or second), close inventory, change gamemode back to what it was originally
+//					}
+					return;
+				}
+				
+				ShopType type = ShopType.BUYING; //TODO this will be barter in the future
+				if(sign.getLine(3).isEmpty() || sign.getLine(3).contains("s") || sign.getLine(3).equalsIgnoreCase("admin"))
+					type = ShopType.SELLING;
+				else if(sign.getLine(3).contains("buy"))
+					type = ShopType.BUYING;
+				
+				boolean isAdmin = false;
+				if(sign.getLine(3).toLowerCase().contains("admin")){
+					if(player.isOp() || (plugin.usePerms && player.hasPermission("shop.operator"))){
+						isAdmin = true;
 					}
-					ArrayList<Double> values = plugin.shopListener.getValues(clicked.getLocation());
-					
-					if(player.getItemInHand().getType() == Material.AIR){
-						player.sendMessage(ChatColor.RED+"You must be holding an item!");
-						return;
-					}
-					final Sign sign = (Sign)clicked.getState();
-					
-					ShopType type = ShopType.BUYING; //TODO this will be barter in the future
-					if(sign.getLine(3).isEmpty() || sign.getLine(3).contains("s") || sign.getLine(3).equalsIgnoreCase("admin"))
-						type = ShopType.SELLING;
-					else if(sign.getLine(3).contains("buy"))
-						type = ShopType.BUYING;
-					
-					boolean isAdmin = false;
-					if(sign.getLine(3).toLowerCase().contains("admin")){
-						if(player.isOp() || (plugin.usePerms && player.hasPermission("shop.operator"))){
-							isAdmin = true;
-						}
-					}
-					String owner = player.getName();
-					if(isAdmin == false)
-						sign.setLine(3, player.getName());
-					else
-						owner = "admin";
+				}
+				String owner = player.getName();
+				if(isAdmin == false)
+					sign.setLine(3, player.getName());
+				else
+					owner = "admin";
 
-					org.bukkit.material.Sign s = (org.bukkit.material.Sign)clicked.getState().getData();
-					Block chest = clicked.getRelative(s.getAttachedFace());
+				org.bukkit.material.Sign s = (org.bukkit.material.Sign)clicked.getState().getData();
+				Block chest = clicked.getRelative(s.getAttachedFace());
+				
+				Block aboveShop = chest.getLocation().getBlock().getRelative(BlockFace.UP);
+				if(aboveShop.getType() == Material.AIR){
+					final ShopObject shop = new ShopObject(chest.getLocation(), 
+							clicked.getLocation(),
+							owner,
+							player.getItemInHand(),
+							price,
+							amount, 
+							isAdmin,
+							type,
+							0);
 					
-					Block aboveShop = chest.getLocation().getBlock().getRelative(BlockFace.UP);
-					if(aboveShop.getType() == Material.AIR){
-						final ShopObject shop = new ShopObject(chest.getLocation(), 
-								clicked.getLocation(),
-								owner,
-								player.getItemInHand(),
-								values.get(0),
-								values.get(1).intValue(), 
-								isAdmin,
-								type,
-								0);
-						
-						PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
-						plugin.getServer().getPluginManager().callEvent(e);
+					PlayerCreateShopEvent e = new PlayerCreateShopEvent(player, shop);
+					plugin.getServer().getPluginManager().callEvent(e);
+				}
+				else{
+					player.sendMessage(ChatColor.RED+"This shop could not created because there is no room for a display item.");
+					if(plugin.shopListener.signsAwaitingItems.containsKey(sign.getLocation())){
+						plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
+							public void run() { 
+								plugin.shopListener.signsAwaitingItems.remove(sign.getLocation());
+								} 
+						}, 40); //2 seconds 
 					}
-					else{
-						player.sendMessage(ChatColor.RED+"This shop could not created because there is no room for a display item.");
-						plugin.shopListener.setValues(clicked.getLocation(), null);
-						if(invincibleSigns.contains(sign.getLocation())){
-							plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
-								public void run() { 
-									invincibleSigns.remove(sign.getLocation());
-									} 
-							}, 40); //2 seconds 
-						}
-						sign.setLine(0, "");
-						sign.setLine(1, "");
-						sign.setLine(2, "");
-						sign.setLine(3, "");
-						sign.update(true);
-					}
+					sign.setLine(0, "");
+					sign.setLine(1, "");
+					sign.setLine(2, "");
+					sign.setLine(3, "");
+					sign.update(true);
 				}
 			}
 		}
@@ -299,9 +313,8 @@ public class MiscListener implements Listener{
 		
 		Block b = event.getBlock();
 		
-		if(invincibleSigns.contains(b.getLocation())){
+		if(plugin.shopListener.signsAwaitingItems.containsKey(b.getLocation())){
 			event.setCancelled(true);
-			System.out.println("Cancelled from invincible sign.");
 			return;
 		}
 	

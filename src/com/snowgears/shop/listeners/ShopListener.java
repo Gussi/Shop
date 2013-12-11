@@ -41,7 +41,7 @@ import com.snowgears.shop.events.PlayerShopExchangeEvent;
 public class ShopListener implements Listener{
 	
 	private Shop plugin = Shop.plugin;
-	private HashMap<Location, ArrayList<Double>> signsAwaitingItems = new HashMap<Location, ArrayList<Double>>(); //location of sign, arraylist of values for shop (price, amount)
+	public HashMap<Location, String> signsAwaitingItems = new HashMap<Location, String>(); //location of sign, person who created sign
 	private HashMap<String, ShopObject> playersViewingShops = new HashMap<String, ShopObject>(); //player name, is viewing shop
 	
 	public ShopListener(Shop instance)
@@ -290,7 +290,7 @@ public class ShopListener implements Listener{
 			player.sendMessage(ChatColor.AQUA+"Potion Effects: ");
 			for(PotionEffect effect : potion.getEffects()){
 				player.sendMessage(ChatColor.WHITE+"   - "+ChatColor.LIGHT_PURPLE+capitalize(effect.getType().getName().replace("_", " ").toLowerCase())+effect.getAmplifier()+ChatColor.GRAY+ " ("+convertDurationToString(effect.getDuration())+")");
-				System.out.println(effect.getDuration());
+//				System.out.println(effect.getDuration());
 			}
 		}
 		player.sendMessage("");
@@ -342,30 +342,23 @@ public class ShopListener implements Listener{
 		}
 		Player player = event.getPlayer();
 
-		ArrayList<Double> values = new ArrayList<Double>();
-		values.add((double)event.getShopPrice());
-		values.add((double)event.getShopAmount());
-		setValues(event.getSignLocation(), values);
+		signsAwaitingItems.put(event.getSignLocation(), player.getName());
 		
 		if(event.getShopType() == ShopType.SELLING)
 			player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with the item you want to sell to other players!");
 		else
 			player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with the item you want to buy from other players!");
-		plugin.miscListener.invincibleSigns.add(event.getSignLocation());
 	}
 	
 	@EventHandler (priority = EventPriority.MONITOR)
 	public void onCreateShop(final PlayerCreateShopEvent event){
-		plugin.shopListener.setValues(event.getShop().getSignLocation(), null);
-		
-		if(plugin.miscListener.invincibleSigns.contains(event.getShop().getSignLocation())){
+		if(signsAwaitingItems.containsKey(event.getShop().getSignLocation())){
 			plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
 				public void run() { 
-					plugin.miscListener.invincibleSigns.remove(event.getShop().getSignLocation());
+					signsAwaitingItems.remove(event.getShop().getSignLocation());
 					} 
 			}, 40); //2 seconds 
 		}
-		
 		if(event.isCancelled()){
 			Sign sign = (Sign)event.getShop().getSignLocation().getBlock().getState();
 			sign.setLine(0, "");
@@ -381,6 +374,7 @@ public class ShopListener implements Listener{
 			sign.setLine(2, ChatColor.GREEN+""+ (int)event.getShop().getPrice() +" "+ plugin.economyDisplayName);
 		else
 			sign.setLine(2, ChatColor.GREEN+""+ event.getShop().getPrice() +" "+ plugin.economyDisplayName);
+		
 		if(!event.getShop().isAdminShop())
 			sign.setLine(3, event.getPlayer().getName());
 		sign.update(true);
@@ -393,7 +387,7 @@ public class ShopListener implements Listener{
 		if(event.getShop().getType() == ShopType.SELLING)
 			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that sells "+ChatColor.GOLD+ di.getType().name().replace("_", " ").toLowerCase()+"(s)"+ChatColor.YELLOW+".");
 		else
-			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that buys "+ChatColor.GOLD+di.getType().name().replace("_", " ").toLowerCase()+"(s)"+ChatColor.YELLOW+".");		
+			player.sendMessage(ChatColor.YELLOW+"You have successfully created a shop that buys "+ChatColor.GOLD+di.getType().name().replace("_", " ").toLowerCase()+"(s)"+ChatColor.YELLOW+".");
 	}
 
 	@EventHandler (priority = EventPriority.MONITOR)
@@ -406,10 +400,10 @@ public class ShopListener implements Listener{
 		event.getShop().delete();
 		
 		if(event.getShop().getOwner().equals(player.getName())){
-			player.sendMessage(ChatColor.GRAY+"You have removed this shop.");
+			player.sendMessage(ChatColor.GRAY+"You have removed this "+event.getShop().getType().name()+" shop.");
 		}
 		else{
-			player.sendMessage(ChatColor.GRAY+"You have removed a shop owned by "+event.getShop().getOwner());
+			player.sendMessage(ChatColor.GRAY+"You have removed a "+event.getShop().getType().name()+" shop owned by "+event.getShop().getOwner());
 		}
 	}
 	
@@ -470,20 +464,20 @@ public class ShopListener implements Listener{
 	    }
 	    return true;
 	}
-	
-	public ArrayList<Double> getValues(Location loc)
-	{
-	    if(signsAwaitingItems.containsKey(loc))
-	      return signsAwaitingItems.get(loc);
-	    else
-	    	return null;
-	}
-	
-	public void setValues(Location loc, ArrayList<Double> al)
-	{
-		signsAwaitingItems.put(loc, al);
-	}
-	
+//	
+//	public ArrayList<Double> getValues(Location loc)
+//	{
+//	    if(signsAwaitingItems.containsKey(loc))
+//	      return signsAwaitingItems.get(loc);
+//	    else
+//	    	return null;
+//	}
+//	
+//	public void setValues(Location loc, ArrayList<Double> al)
+//	{
+//		signsAwaitingItems.put(loc, al);
+//	}
+//	
 //	public ItemStack getClickedShopItem(Inventory inv){
 //		if(clickedShopInventories.containsKey(inv)){
 //			return clickedShopInventories.get(inv);

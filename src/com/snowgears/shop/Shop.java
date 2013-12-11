@@ -73,14 +73,12 @@ public class Shop extends JavaPlugin{
 			}
 		}
 		
-		Updater updater;
+		Updater updater = null;
 		boolean autoUpdate = getConfig().getBoolean("AUTO-UPDATE");
 		if(autoUpdate)
-			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.DEFAULT, true);
-		else
-			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.NO_DOWNLOAD, true);
+			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.DEFAULT, false);
 		
-		if(updater.getResult() == UpdateResult.SUCCESS){
+		if(updater != null && updater.getResult() == UpdateResult.SUCCESS){
 			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() { 
 				public void run() { 
 					configFile.delete();
