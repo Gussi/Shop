@@ -6,18 +6,15 @@ import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Sign;
 import org.bukkit.block.Chest;
-import org.bukkit.entity.Item;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.util.Vector;
 
 public class ShopObject{
 
 	private Location location;
 	private Location signLocation;
 	private String owner;
-	private Item displayItem;
+	private DisplayItem displayItem;
 	private Double price;
 	private Integer amount;
 	private Integer timesUsed;
@@ -42,19 +39,7 @@ public class ShopObject{
 		type = t;
 		timesUsed = amtUsed;
 		
-		this.spawnDisplayItem(is);
-	}
-	
-	private void spawnDisplayItem(ItemStack is){
-		is.setAmount(1);
-		final Item i = location.getWorld().dropItem(location.clone().add(0.5,1.2,0.5), is);
-		i.setVelocity(new Vector(0, 0.1, 0));
-		i.setMetadata("DisplayItem", new FixedMetadataValue(Shop.plugin,0));
-		this.displayItem = i;
-	}
-	
-	public void removeDisplayItem(){
-		displayItem.remove();
+		displayItem = new DisplayItem(is, this);
 	}
 	
 	public Location getLocation(){
@@ -73,7 +58,7 @@ public class ShopObject{
 		return owner;
 	}
 	
-	public Item getDisplayItem(){
+	public DisplayItem getDisplayItem(){
 		return displayItem;
 	}
 	
@@ -99,11 +84,6 @@ public class ShopObject{
 	
 	public void addUse(){
 		timesUsed++;
-	}
-	
-	public void setDisplayItem(ItemStack is){
-		this.removeDisplayItem();
-		this.spawnDisplayItem(is);
 	}
 	
 	public void setOwner(String s){

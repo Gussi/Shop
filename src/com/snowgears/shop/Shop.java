@@ -43,6 +43,7 @@ public class Shop extends JavaPlugin{
 	
 	private static final Logger log = Logger.getLogger("Minecraft");
 	public Economy econ = null;
+	public boolean hasClearLag = false;
 
 	public void onEnable(){
 		plugin = this;
@@ -117,6 +118,10 @@ public class Shop extends JavaPlugin{
 				log.info("[Shop] Shops will use "+economyMaterial.name().replace("_", " ").toLowerCase()+" as the currency on the server.");
 		}
 		
+		if (getServer().getPluginManager().getPlugin("ClearLag") != null) {
+            hasClearLag = true;
+        }
+		
 		shopFile = new File(fileDirectory + "/shops.yml");
 		
 		if(! shopFile.exists()){ // file doesn't exist
@@ -142,9 +147,9 @@ public class Shop extends JavaPlugin{
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
 		if(args.length == 1){
 			if ((cmd.getName().equalsIgnoreCase("shop") && args[0].equalsIgnoreCase("list"))) {
-				sender.sendMessage("There are "+ChatColor.GOLD+shopHandler.getNumberOfShops()+ChatColor.WHITE+" shops registered.");
+				sender.sendMessage("There are "+ChatColor.GOLD+shopHandler.getNumberOfShops()+ChatColor.WHITE+" shops registered on the server.");
 			}
-			else if ((cmd.getName().equalsIgnoreCase("shop") && args[0].equalsIgnoreCase("reload"))) {
+			else if ((cmd.getName().equalsIgnoreCase("shop") && args[0].equalsIgnoreCase("refresh"))) {
 				if(sender instanceof Player){
 					Player player = (Player)sender;
 					if((usePerms && !player.hasPermission("shop.operator")) || !player.isOp()){
@@ -152,8 +157,8 @@ public class Shop extends JavaPlugin{
 						return true;
 					}
 				}
-				shopHandler.saveShops();
-				shopHandler.loadShops();
+				shopHandler.refreshShopItems();
+				sender.sendMessage(ChatColor.GRAY+"The display items on all of the shops have been refreshed.");
 			}
 			return true;
 		}

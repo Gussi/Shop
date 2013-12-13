@@ -89,7 +89,7 @@ public class MiscListener implements Listener{
 		plugin.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() { 
 			public void run() { 
 				for(ShopObject shop : shopsInExplosion){
-					shop.setDisplayItem(shop.getDisplayItem().getItemStack()); //refresh shop item
+					shop.getDisplayItem().refresh(); 
 				} 
 			}
 		}, 100L); 
@@ -131,7 +131,7 @@ public class MiscListener implements Listener{
 
 		double price = 0;
 		int amount = 0;
-		ShopType type = ShopType.BUYING; //TODO make this barter
+		ShopType type = ShopType.SELLING; //TODO make this barter
 		if(relBlock.getType() == Material.CHEST){
 			final Sign signBlock = (Sign)b.getState();
 			if(event.getLine(0).equalsIgnoreCase("[shop]")){
@@ -167,29 +167,27 @@ public class MiscListener implements Listener{
 
 					if(event.getLine(3).isEmpty() || event.getLine(3).toLowerCase().contains("s"))
 						type = ShopType.SELLING;
-					else if(event.getLine(3).toLowerCase().contains("buy"))
+					else if(event.getLine(3).toLowerCase().contains("b")) //TODO this will be "buy" when barter shops are added
 						type = ShopType.BUYING;
 					
 					boolean isAdmin = false;
 					if(event.getLine(3).toLowerCase().contains("admin"))
 						if(player.isOp() || (plugin.usePerms && player.hasPermission("shop.operator")))
 							isAdmin = true;
-					
-					signBlock.update(true);
-					
-					relBlock.getRelative(sign.getFacing()).setTypeId(Material.WALL_SIGN.getId());
+							
+					relBlock.getRelative(sign.getFacing()).setType(Material.WALL_SIGN);
 					
 					final Sign newSign = (Sign)relBlock.getRelative(sign.getFacing()).getState();
-					newSign.setLine(0, ChatColor.BOLD+event.getLine(0));
+					newSign.setLine(0, ChatColor.BOLD+"[shop]");
 					if(type == ShopType.SELLING)
 						newSign.setLine(1, "Selling: "+ChatColor.BOLD+ amount);
 					else
 						newSign.setLine(1, "Buying: "+ChatColor.BOLD+ amount);
 					
-					if(plugin.econ == null)
-						newSign.setLine(2, ChatColor.RED+""+ (int)price +" "+ plugin.economyDisplayName);
-					else
+					if(plugin.useVault)
 						newSign.setLine(2, ChatColor.RED+""+ price +" "+ plugin.economyDisplayName);
+					else
+						newSign.setLine(2, ChatColor.RED+""+ (int)price +" "+ plugin.economyDisplayName);
 					
 					if(isAdmin)
 						newSign.setLine(3, "admin");
@@ -197,10 +195,12 @@ public class MiscListener implements Listener{
 						newSign.setLine(3, "");
 					
 					org.bukkit.material.Sign matSign = new org.bukkit.material.Sign(Material.WALL_SIGN);
-					matSign.setFacingDirection(sign.getFacing());
-					
-					newSign.setData(matSign);
-					newSign.update();
+                    matSign.setFacingDirection(sign.getFacing());
+                    
+                    newSign.setData(matSign);
+                    newSign.update();
+
+                    signBlock.update();
 					
 					PlayerPreCreateShopEvent e = new PlayerPreCreateShopEvent(player, newSign.getLocation(), relBlock.getLocation(), price, amount, isAdmin, type);
 					plugin.getServer().getPluginManager().callEvent(e);
@@ -236,9 +236,8 @@ public class MiscListener implements Listener{
 				if(player.getItemInHand().getType() == Material.AIR){
 					player.sendMessage(ChatColor.RED+"You must be holding an item!");
 //					if(sign.getLine(1).contains("Buying")){
-//						player.setGameMode(GameMode.CREATIVE);
 //						//add to hashmap playersInCreativeMenu<String Name, GameMode oldGameMode>
-//						player.openInventory(player.getInventory());
+//						player.openInventory(player.getInventory(), InventoryType.CREATIVE);
 //						//listen on inventoryClick, if player is in hashmap, cancel click, save item in new hashmap chosenCreativeItem<String name, ItemStack>
 //						//player.closeInventory();
 //						//set gamemode back to what it was to start
@@ -251,16 +250,14 @@ public class MiscListener implements Listener{
 				}
 				
 				ShopType type = ShopType.BUYING; //TODO this will be barter in the future
-				if(sign.getLine(3).isEmpty() || sign.getLine(3).contains("s") || sign.getLine(3).equalsIgnoreCase("admin"))
+				if(sign.getLine(1).toLowerCase().contains("sell"))
 					type = ShopType.SELLING;
-				else if(sign.getLine(3).contains("buy"))
+				else if(sign.getLine(1).toLowerCase().contains("buy"))
 					type = ShopType.BUYING;
 				
 				boolean isAdmin = false;
-				if(sign.getLine(3).toLowerCase().contains("admin")){
-					if(player.isOp() || (plugin.usePerms && player.hasPermission("shop.operator"))){
-						isAdmin = true;
-					}
+				if(sign.getLine(3).equalsIgnoreCase("admin")){
+					isAdmin = true;
 				}
 				String owner = player.getName();
 				if(isAdmin == false)
@@ -293,7 +290,7 @@ public class MiscListener implements Listener{
 							public void run() { 
 								plugin.shopListener.signsAwaitingItems.remove(sign.getLocation());
 								} 
-						}, 40); //2 seconds 
+						}, 1); //1 tick
 					}
 					sign.setLine(0, "");
 					sign.setLine(1, "");

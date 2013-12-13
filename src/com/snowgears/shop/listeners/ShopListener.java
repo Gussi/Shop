@@ -116,6 +116,7 @@ public class ShopListener implements Listener{
 			
 			player.updateInventory();
 			sendExchangeMessages(shop, player);
+			shop.addUse();
 	}
 	
 	private void sendExchangeMessages(ShopObject shop, Player player){
@@ -357,7 +358,7 @@ public class ShopListener implements Listener{
 				public void run() { 
 					signsAwaitingItems.remove(event.getShop().getSignLocation());
 					} 
-			}, 40); //2 seconds 
+			}, 1); //1 tick
 		}
 		if(event.isCancelled()){
 			Sign sign = (Sign)event.getShop().getSignLocation().getBlock().getState();
@@ -400,10 +401,10 @@ public class ShopListener implements Listener{
 		event.getShop().delete();
 		
 		if(event.getShop().getOwner().equals(player.getName())){
-			player.sendMessage(ChatColor.GRAY+"You have removed this "+event.getShop().getType().name()+" shop.");
+			player.sendMessage(ChatColor.GRAY+"You have removed this "+event.getShop().getType().name().toLowerCase()+" shop.");
 		}
 		else{
-			player.sendMessage(ChatColor.GRAY+"You have removed a "+event.getShop().getType().name()+" shop owned by "+event.getShop().getOwner());
+			player.sendMessage(ChatColor.GRAY+"You have removed a "+event.getShop().getType().name().toLowerCase()+" shop owned by "+event.getShop().getOwner());
 		}
 	}
 	

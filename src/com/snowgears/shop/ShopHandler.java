@@ -22,6 +22,7 @@ import java.util.Set;
 
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemStack;
@@ -65,33 +66,7 @@ public class ShopHandler {
 	public int getNumberOfShops(){
 		return allShops.size();
 	}
-	
-//	private Map<String, ArrayList<ShopObject>> groupedShopMap(){
-//		HashMap<String, ArrayList<ShopObject>> map = new HashMap<String, ArrayList<ShopObject>>();
-//		
-//		ArrayList<String> shopOwners = new ArrayList<String>();
-//		for(ShopObject s : allShops.values()){
-//			if(!shopOwners.contains(s.getOwner())){
-//				shopOwners.add(s.getOwner());
-//				map.put(s.getOwner(), new ArrayList<ShopObject>());
-//			}
-//		}
-//		Collections.sort(shopOwners);
-//		
-//		for(Entry<String, ArrayList<ShopObject>> set : map.entrySet()){
-//			ArrayList<ShopObject> shopList = set.getValue();
-//			for(ShopObject s : allShops.values()){
-//				if(s.getOwner().equals(set.getKey())){
-//					shopList.add(s);
-//					map.put(set.getKey(), shopList);
-//				}
-//			}
-//		}
-//		
-//		Map<String, ArrayList<ShopObject>> sortedMap = new TreeMap<String, ArrayList<ShopObject>>(map);
-//		return sortedMap;
-//	}
-	
+
 	private ArrayList<ShopObject> orderedShopList(){
 		ArrayList<ShopObject> list = new ArrayList<ShopObject>(allShops.values());
 		Collections.sort(list, new Comparator<ShopObject>(){
@@ -101,6 +76,12 @@ public class ShopHandler {
 			}
 		});
 		return list;
+	}
+	
+	public void refreshShopItems(){
+		for(ShopObject shop : allShops.values()){
+			shop.getDisplayItem().refresh();
+		}
 	}
 	
 	public void saveShops(){
@@ -133,8 +114,8 @@ public class ShopHandler {
 		for(int i=0; i<shopList.size(); i++)
 		{
 			ShopObject s = shopList.get(i);
-			config.set("shops."+s.getOwner()+"."+shopNumber+".location", locationToString(s.getLocation()));
-			config.set("shops."+s.getOwner()+"."+shopNumber+".signLocation", locationToString(s.getSignLocation()));
+//			config.set("shops."+s.getOwner()+"."+shopNumber+".location", locationToString(s.getLocation()));
+			config.set("shops."+s.getOwner()+"."+shopNumber+".location", locationToString(s.getSignLocation()));
 			config.set("shops."+s.getOwner()+"."+shopNumber+".price", s.getPrice());
 			config.set("shops."+s.getOwner()+"."+shopNumber+".amount", s.getAmount()); 
 			String type = "";
@@ -222,35 +203,40 @@ public class ShopHandler {
 		for(String shopOwner : allShopOwners){
 			Set<String> allShopNumbers = config.getConfigurationSection("shops."+shopOwner).getKeys(false);
 			for(String shopNumber : allShopNumbers){
-				Location loc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".location"));
-				Location signLoc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".signLocation"));
-				double price = Double.parseDouble(config.getString("shops."+shopOwner+"."+shopNumber+".price"));
-				int amount = Integer.parseInt(config.getString("shops."+shopOwner+"."+shopNumber+".amount"));
-				String type = config.getString("shops."+shopOwner+"."+shopNumber+".type");
-				boolean isAdmin = false;
-				if(type.contains("admin"))
-					isAdmin = true;
-				ShopType shopType = typeFromString(type);
-				int timesUsed = config.getInt("shops."+shopOwner+"."+shopNumber+".timesUsed");
-				
-				MaterialData data = dataFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.data"));
-				ItemStack is = new ItemStack(data.getItemType());
-				is.setData(data);
-				short durability = (short)(config.getInt("shops."+shopOwner+"."+shopNumber+".item.durability"));
-				is.setDurability(durability);
-				ItemMeta im = is.getItemMeta();
-				String name = config.getString("shops."+shopOwner+"."+shopNumber+".item.name");
-				if(!name.isEmpty())
-					im.setDisplayName(config.getString("shops."+shopOwner+"."+shopNumber+".item.name"));
-				List<String> lore = loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore"));
-				if(lore.size() > 1)
-					im.setLore(loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore")));
-				is.setItemMeta(im);
-				is.addUnsafeEnchantments(enchantmentsFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.enchantments")));
-				
-				ShopObject shop = new ShopObject(loc, signLoc, shopOwner, is, price, amount, isAdmin, shopType, timesUsed);
-				shop.updateSign();
-				this.addShop(shop);
+//				Location loc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".location"));
+				Location signLoc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".location"));
+				Block b = signLoc.getBlock();
+				if(b.getType() == Material.WALL_SIGN){
+					org.bukkit.material.Sign sign = (org.bukkit.material.Sign)b.getState().getData();
+					Location loc = b.getRelative(sign.getAttachedFace()).getLocation();
+					double price = Double.parseDouble(config.getString("shops."+shopOwner+"."+shopNumber+".price"));
+					int amount = Integer.parseInt(config.getString("shops."+shopOwner+"."+shopNumber+".amount"));
+					String type = config.getString("shops."+shopOwner+"."+shopNumber+".type");
+					boolean isAdmin = false;
+					if(type.contains("admin"))
+						isAdmin = true;
+					ShopType shopType = typeFromString(type);
+					int timesUsed = config.getInt("shops."+shopOwner+"."+shopNumber+".timesUsed");
+					
+					MaterialData data = dataFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.data"));
+					ItemStack is = new ItemStack(data.getItemType());
+					is.setData(data);
+					short durability = (short)(config.getInt("shops."+shopOwner+"."+shopNumber+".item.durability"));
+					is.setDurability(durability);
+					ItemMeta im = is.getItemMeta();
+					String name = config.getString("shops."+shopOwner+"."+shopNumber+".item.name");
+					if(!name.isEmpty())
+						im.setDisplayName(config.getString("shops."+shopOwner+"."+shopNumber+".item.name"));
+					List<String> lore = loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore"));
+					if(lore.size() > 1)
+						im.setLore(loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore")));
+					is.setItemMeta(im);
+					is.addUnsafeEnchantments(enchantmentsFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.enchantments")));
+					
+					ShopObject shop = new ShopObject(loc, signLoc, shopOwner, is, price, amount, isAdmin, shopType, timesUsed);
+					shop.updateSign();
+					this.addShop(shop);
+				}
 			}
 		}
 	}
