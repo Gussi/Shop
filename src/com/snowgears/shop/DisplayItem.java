@@ -46,7 +46,7 @@ public class DisplayItem{
 		if(item == null)
 			return;
 		if(Shop.plugin.hasClearLag){
-			Clearlag.getEntityManager.addUnremovableEntity(item.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
+			Clearlag.getEntityManager.removeUnremovableEntity(item.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
 		}
 		item.remove();
 		item = null;

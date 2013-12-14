@@ -268,6 +268,13 @@ public class ShopListener implements Listener{
 			player.sendMessage(ChatColor.WHITE+im.getDisplayName());
 		else
 			player.sendMessage(ChatColor.WHITE+capitalize(di.getType().name().replace("_", " ").toLowerCase()));
+		
+		if(im.getLore() != null){
+			for(String s : im.getLore()){
+				player.sendMessage(s);
+			}
+		}
+		
 		Map<Enchantment,Integer> enchantments = di.getEnchantments();
 		
 		int durability = getDurabilityPercent(di);
@@ -347,8 +354,10 @@ public class ShopListener implements Listener{
 		
 		if(event.getShopType() == ShopType.SELLING)
 			player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with the item you want to sell to other players!");
-		else
+		else{
 			player.sendMessage(ChatColor.GOLD+"[Shop] Now just hit the sign with the item you want to buy from other players!");
+			player.sendMessage(ChatColor.GRAY+"Alternatively, you can hit the shop with your hand to pick the item you want to receive from the creative menu.");
+		}
 	}
 	
 	@EventHandler (priority = EventPriority.MONITOR)
