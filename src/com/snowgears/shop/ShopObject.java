@@ -175,7 +175,7 @@ public class ShopObject{
 	}
 	
 	public void delete(){
-		Shop.plugin.shopHandler.removeShop(this);
+//		Shop.plugin.shopHandler.removeShop(this);
 		this.getDisplayItem().remove();
 		
 		Block b = this.getSignLocation().getBlock();

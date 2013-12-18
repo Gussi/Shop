@@ -45,14 +45,14 @@ public class ShopHandler {
 		return allShops.get(loc);
 	}
 	
-	public ShopObject addShop(ShopObject shop){
-		return allShops.put(shop.getLocation(), shop);
+	public void addShop(ShopObject shop){
+		allShops.put(shop.getLocation(), shop);
 	}
 	
 	public boolean removeShop(ShopObject shop){
 		if(allShops.containsKey(shop.getLocation())){
 			allShops.remove(shop.getLocation());
-			shop.getDisplayItem().remove();
+			shop.delete();
 			return true;
 		}
 		return false;
@@ -131,13 +131,14 @@ public class ShopHandler {
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.name", im.getDisplayName());
 			else
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.name", "");
-			config.set("shops."+s.getOwner()+"."+shopNumber+".item.data", displayStack.getData().toString());
+			config.set("shops."+s.getOwner()+"."+shopNumber+".item.data", dataToString(displayStack.getData()));
 			config.set("shops."+s.getOwner()+"."+shopNumber+".item.durability", displayStack.getDurability());
 			config.set("shops."+s.getOwner()+"."+shopNumber+".item.enchantments", enchantmentsToString(displayStack.getEnchantments()));
 			if(im.getLore() != null)
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", im.getLore().toString());
 			else
 				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", "[]");
+			
 			s.delete();
 			
 			shopNumber++;
@@ -277,12 +278,18 @@ public class ShopHandler {
 		return enchants;
 	}
 	
+	private String dataToString(MaterialData md){
+		return md.getItemType().name()+"("+md.getData()+")";
+	}
+	
 	private MaterialData dataFromString(String dataString){
 		int index = dataString.indexOf("(");
 //		System.out.println(dataString.substring(0, index));
 //		System.out.println(dataString.substring(index+1, dataString.length()-1));
-		Material m = Material.getMaterial(dataString.substring(0, index));
+		String materialString = dataString.substring(0, index);
+		Material m = Material.getMaterial(materialString);
 		int data = Integer.parseInt(dataString.substring(index+1, dataString.indexOf(")")));
+
 		return new MaterialData(m, (byte)data);
 	}
 	
