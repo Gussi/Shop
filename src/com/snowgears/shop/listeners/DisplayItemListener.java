@@ -15,7 +15,7 @@ import com.snowgears.shop.ShopObject;
 
 public class DisplayItemListener implements Listener{
 
-	public Shop plugin = Shop.plugin;
+	public Shop plugin = Shop.getPlugin();
 	
 	public DisplayItemListener(Shop instance)
     {
@@ -41,7 +41,7 @@ public class DisplayItemListener implements Listener{
 
 	@EventHandler
 	public void onWaterFlow(BlockFromToEvent event){
-		ShopObject shop = plugin.shopHandler.getShop(event.getToBlock().getRelative(BlockFace.DOWN).getLocation());
+		ShopObject shop = plugin.getShopHandler().getShop(event.getToBlock().getRelative(BlockFace.DOWN).getLocation());
 		if(shop != null)
 			event.setCancelled(true);
 	}
@@ -63,7 +63,7 @@ public class DisplayItemListener implements Listener{
 	
 	@EventHandler (priority = EventPriority.HIGH)
 	public void onBlockPlace(BlockPlaceEvent event){
-		ShopObject shop = plugin.shopHandler.getShop(event.getBlock().getRelative(BlockFace.DOWN).getLocation());
+		ShopObject shop = plugin.getShopHandler().getShop(event.getBlock().getRelative(BlockFace.DOWN).getLocation());
 		if(shop != null)
 			event.setCancelled(true);
 	}

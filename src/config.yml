@@ -1,16 +1,16 @@
 # Thanks for downloading Shop! #
 #——————————————————————————————#
 
-AUTO-UPDATE: true
+AUTO-UPDATE: false
 
 usePermissions: false
 
 # If you want to use virtual money, install the plugin Vault and set ‘useVault to true #
-# For itemCurrency, see http://jd.bukkit.org/rb/apidocs/org/bukkit/Material.html #
+# For itemCurrencyID, see http://www.minecraftinfo.com/idlist.htm #
 
 Economy:
    useVault: false
-   itemCurrency (non-vault): EMERALD
+   itemCurrencyID (non-vault): 388;0
    displayName: Rupee
    currencyToStartWith: 0
 

@@ -27,7 +27,7 @@ import com.snowgears.shop.ShopObject;
 
 public class YamlPriceHandler {
 	
-	public Shop plugin = Shop.plugin;
+	public Shop plugin = Shop.getPlugin();
 	
 	private HashMap<Material, Double> prices = new HashMap<Material, Double>(); //TODO make getters for values
 	

@@ -31,7 +31,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 					itemPlayerReceived.setAmount(shop.getAmount());
 				}
 				else if(shop.getType() == ShopType.BUYING){
-					itemPlayerReceived = new ItemStack(Shop.plugin.economyMaterial, (int)shop.getPrice());
+					itemPlayerReceived = new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)shop.getPrice());
 				}
 			}
 			else{
@@ -40,7 +40,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 			
 			if(shopReceivedItem()){
 				if(shop.getType() == ShopType.SELLING){
-					itemShopReceived = new ItemStack(Shop.plugin.economyMaterial, (int)shop.getPrice());
+					itemShopReceived = new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)shop.getPrice());
 				}
 				else if(shop.getType() == ShopType.BUYING){
 					itemShopReceived = shop.getDisplayItem().getItemStack();
@@ -75,7 +75,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 	    }
 	    
 	    public boolean playerReceivedItem(){
-	    	return (shop.getType() == ShopType.SELLING || (shop.getType() == ShopType.BUYING && Shop.plugin.econ == null));
+	    	return (shop.getType() == ShopType.SELLING || (shop.getType() == ShopType.BUYING && Shop.getPlugin().getEconomy() == null));
 	    }
 	    
 	    public ItemStack getItemPlayerReceived(){
@@ -87,7 +87,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 //	    }
 	    
 	    public boolean shopReceivedItem(){
-	    	return shop.getType() == ShopType.BUYING || (shop.getType() == ShopType.SELLING && Shop.plugin.econ == null);
+	    	return shop.getType() == ShopType.BUYING || (shop.getType() == ShopType.SELLING && Shop.getPlugin().getEconomy() == null);
 	    }
 
 	    public ItemStack getItemShopReceived() {
@@ -99,7 +99,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 //	    }
 	    
 	    public boolean playerReceivedMoney(){
-	    	return shop.getType() == ShopType.BUYING && Shop.plugin.econ != null;
+	    	return shop.getType() == ShopType.BUYING && Shop.getPlugin().getEconomy() != null;
 	    }
 
 	    public double getMoneyPlayerReceived(){
@@ -111,7 +111,7 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 //	    }
 	    
 	    public boolean shopReceivedMoney(){
-	    	return shop.getType() == ShopType.SELLING && Shop.plugin.econ != null;
+	    	return shop.getType() == ShopType.SELLING && Shop.getPlugin().getEconomy() != null;
 	    }
 	    
 	    public double getMoneyShopReceived(){

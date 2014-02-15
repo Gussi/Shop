@@ -40,7 +40,7 @@ import com.snowgears.shop.events.PlayerShopExchangeEvent;
 
 public class ShopListener implements Listener{
 	
-	private Shop plugin = Shop.plugin;
+	private Shop plugin = Shop.getPlugin();
 	public HashMap<Location, String> signsAwaitingItems = new HashMap<Location, String>(); //location of sign, person who created sign
 	private HashMap<String, ShopObject> playersViewingShops = new HashMap<String, ShopObject>(); //player name, is viewing shop
 	
@@ -70,12 +70,12 @@ public class ShopListener implements Listener{
 					player.getWorld().dropItem(player.getLocation(), me.getValue());
 				}
 				
-				if(plugin.useVault){
+				if(plugin.useVault()){
 					//remove money from player
-					plugin.econ.withdrawPlayer(player.getName(), event.getMoneyShopReceived());
+					plugin.getEconomy().withdrawPlayer(player.getName(), event.getMoneyShopReceived());
 					//pay that money to the shop
 					if(!shop.isAdminShop())
-						plugin.econ.depositPlayer(shop.getOwner(), event.getMoneyShopReceived());
+						plugin.getEconomy().depositPlayer(shop.getOwner(), event.getMoneyShopReceived());
 				}
 				//using item economy
 				else{
@@ -94,12 +94,12 @@ public class ShopListener implements Listener{
 				if(!shop.isAdminShop())
 					shop.getInventory().addItem(event.getItemShopReceived());
 				
-				if(plugin.useVault){
+				if(plugin.useVault()){
 					//remove money from shop
 					if(!shop.isAdminShop())
-						plugin.econ.withdrawPlayer(shop.getOwner(), event.getMoneyPlayerReceived());
+						plugin.getEconomy().withdrawPlayer(shop.getOwner(), event.getMoneyPlayerReceived());
 					//pay that money to the player
-					plugin.econ.depositPlayer(player.getName(), event.getMoneyPlayerReceived());
+					plugin.getEconomy().depositPlayer(player.getName(), event.getMoneyPlayerReceived());
 				}
 				//using item economy
 				else{
@@ -128,11 +128,11 @@ public class ShopListener implements Listener{
 				purchasedName = (itemPurchased.getType().name().replace("_", " ").toLowerCase())+"(s)";
 			else
 				purchasedName = im.getDisplayName()+"(s)";
-			player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+			player.sendMessage(ChatColor.GRAY+"You bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.getEconomyDisplayName()+ChatColor.GRAY+".");
 			
 			Player owner = Bukkit.getPlayer(shop.getOwner());
 			if(owner != null)
-				owner.sendMessage(ChatColor.GRAY+player.getName()+" bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+				owner.sendMessage(ChatColor.GRAY+player.getName()+" bought "+ChatColor.WHITE+ shop.getAmount()+" "+ purchasedName +ChatColor.GRAY+ " from you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.getEconomyDisplayName()+ChatColor.GRAY+".");
 		}
 		else if(shop.getType() == ShopType.BUYING){
 			ItemStack itemSold = shop.getDisplayItem().getItemStack();
@@ -142,11 +142,11 @@ public class ShopListener implements Listener{
 				soldName = (itemSold.getType().name().replace("_", " ").toLowerCase())+"(s)";
 			else
 				soldName = im.getDisplayName()+"(s)";
-			player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+			player.sendMessage(ChatColor.GRAY+"You sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to "+shop.getOwner()+" for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.getEconomyDisplayName()+ChatColor.GRAY+".");
 			
 			Player owner = Bukkit.getPlayer(shop.getOwner());
 			if(owner != null)
-				owner.sendMessage(ChatColor.GRAY+player.getName()+" sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.economyDisplayName+ChatColor.GRAY+".");
+				owner.sendMessage(ChatColor.GRAY+player.getName()+" sold "+ChatColor.WHITE+ shop.getAmount()+" "+ soldName +ChatColor.GRAY+ " to you for "+ChatColor.GREEN+shop.getPrice()+" "+plugin.getEconomyDisplayName()+ChatColor.GRAY+".");
 		}
 	}
 
@@ -229,14 +229,14 @@ public class ShopListener implements Listener{
 		if(event.getAction() == Action.RIGHT_CLICK_BLOCK){
 			if(event.getClickedBlock().getType() == Material.CHEST){
 				Player player = event.getPlayer();
-				ShopObject shop = plugin.shopHandler.getShop(event.getClickedBlock().getLocation());
+				ShopObject shop = plugin.getShopHandler().getShop(event.getClickedBlock().getLocation());
 				if(shop == null)
 					return;
 				//player is trying to open own shop
 				if(shop.getOwner().equals(player.getName())){
 					playersViewingShops.put(player.getName(), shop);
 				}
-				else if((plugin.usePerms && player.hasPermission("plugin.operator")) || player.isOp()){
+				else if((plugin.usePerms() && player.hasPermission("plugin.operator")) || player.isOp()){
 					if(shop.isAdminShop()){
 						event.setCancelled(true);
 						showDisplayItemStats(shop, player);
@@ -303,18 +303,18 @@ public class ShopListener implements Listener{
 		}
 		player.sendMessage("");
 		if(shop.getType() == ShopType.SELLING){
-			player.sendMessage(ChatColor.GREEN+"You can buy "+ChatColor.WHITE+shop.getAmount()+ChatColor.GREEN+" "+di.getType().name().replace("_", " ").toLowerCase()+" from this shop for "+ChatColor.WHITE+shop.getPrice()+ChatColor.GREEN+" "+plugin.economyDisplayName+".");
+			player.sendMessage(ChatColor.GREEN+"You can buy "+ChatColor.WHITE+shop.getAmount()+ChatColor.GREEN+" "+di.getType().name().replace("_", " ").toLowerCase()+" from this shop for "+ChatColor.WHITE+shop.getPrice()+ChatColor.GREEN+" "+plugin.getEconomyDisplayName()+".");
 			double pricePer = shop.getPrice()/shop.getAmount();
 			pricePer = Math.round(pricePer * 100);
 			pricePer = pricePer/100;
-			player.sendMessage(ChatColor.GRAY+"That is "+pricePer+" "+plugin.economyDisplayName+" per "+di.getType().name().replace("_", " ").toLowerCase()+".");
+			player.sendMessage(ChatColor.GRAY+"That is "+pricePer+" "+plugin.getEconomyDisplayName()+" per "+di.getType().name().replace("_", " ").toLowerCase()+".");
 		}
 		else{
-			player.sendMessage(ChatColor.GREEN+"You can sell "+ChatColor.WHITE+shop.getAmount()+ChatColor.GREEN+" "+di.getType().name().replace("_", " ").toLowerCase()+" to this shop for "+ChatColor.WHITE+shop.getPrice()+ChatColor.GREEN+" "+plugin.economyDisplayName+".");
+			player.sendMessage(ChatColor.GREEN+"You can sell "+ChatColor.WHITE+shop.getAmount()+ChatColor.GREEN+" "+di.getType().name().replace("_", " ").toLowerCase()+" to this shop for "+ChatColor.WHITE+shop.getPrice()+ChatColor.GREEN+" "+plugin.getEconomyDisplayName()+".");
 			double pricePer = shop.getPrice()/shop.getAmount();
 			pricePer = Math.round(pricePer * 100);
 			pricePer = pricePer/100;
-			player.sendMessage(ChatColor.GRAY+"That is "+pricePer+" "+plugin.economyDisplayName+" per "+di.getType().name().replace("_", " ").toLowerCase()+".");
+			player.sendMessage(ChatColor.GRAY+"That is "+pricePer+" "+plugin.getEconomyDisplayName()+" per "+di.getType().name().replace("_", " ").toLowerCase()+".");
 		}
 		player.sendMessage("");
 		return;
@@ -380,10 +380,10 @@ public class ShopListener implements Listener{
 			return;
 		}
 		Sign sign = (Sign)event.getShop().getSignLocation().getBlock().getState();
-		if(plugin.econ == null)
-			sign.setLine(2, ChatColor.GREEN+""+ (int)event.getShop().getPrice() +" "+ plugin.economyDisplayName);
+		if(plugin.getEconomy() == null)
+			sign.setLine(2, ChatColor.GREEN+""+ (int)event.getShop().getPrice() +" "+ plugin.getEconomyDisplayName());
 		else
-			sign.setLine(2, ChatColor.GREEN+""+ event.getShop().getPrice() +" "+ plugin.economyDisplayName);
+			sign.setLine(2, ChatColor.GREEN+""+ event.getShop().getPrice() +" "+ plugin.getEconomyDisplayName());
 		
 		if(!event.getShop().isAdminShop())
 			sign.setLine(3, event.getPlayer().getName());
@@ -391,7 +391,7 @@ public class ShopListener implements Listener{
 		
 		Player player = event.getPlayer();
 		
-		plugin.shopHandler.addShop(event.getShop());
+		plugin.getShopHandler().addShop(event.getShop());
 
 		ItemStack di = event.getShop().getDisplayItem().getItemStack();
 		if(event.getShop().getType() == ShopType.SELLING)
@@ -407,6 +407,7 @@ public class ShopListener implements Listener{
 		}
 		Player player = event.getPlayer();
 		
+		Shop.getPlugin().getShopHandler().removeShop(event.getShop());
 		event.getShop().delete();
 		
 		if(event.getShop().getOwner().equals(player.getName())){
@@ -418,8 +419,8 @@ public class ShopListener implements Listener{
 	}
 	
 	public boolean canPutItemInShop(ShopObject shop, ItemStack item, Player p){
-		if(!plugin.useVault){
-			if(item.getType() == plugin.economyMaterial)
+		if(!plugin.useVault()){
+			if(item.getType() == plugin.getEconomyMaterial().getItemType())
 				return true;
 		}
 		ItemStack di = shop.getDisplayItem().getItemStack();

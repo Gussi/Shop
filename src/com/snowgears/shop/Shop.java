@@ -6,8 +6,8 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
-import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.command.Command;
@@ -25,25 +25,26 @@ import net.milkbowl.vault.economy.Economy;
 
 public class Shop extends JavaPlugin{
 	
-	public final ShopListener shopListener = new ShopListener(this);
-	public final DisplayItemListener displayListener = new DisplayItemListener(this);
-	public final MiscListener miscListener = new MiscListener(this);
-	public final ShopHandler shopHandler = new ShopHandler(this);
-	public static Shop plugin;
+	private static Shop plugin;
+	
+	private final ShopListener shopListener = new ShopListener(this);
+	private final DisplayItemListener displayListener = new DisplayItemListener(this);
+	private final MiscListener miscListener = new MiscListener(this);
+	private final ShopHandler shopHandler = new ShopHandler(this);
 	
 	protected FileConfiguration config; 
 	protected File shopFile = null;
 	
-	public boolean usePerms = false;
-	public boolean useVault = false;
-	public Material economyMaterial = null;
-	public String economyDisplayName = "";
-	public int currencyToStart = 0;
-	public int durabilityMargin = 0;
+	private boolean usePerms = false;
+	private boolean useVault = false;
+	private MaterialData economyMaterial = null;
+	private String economyDisplayName = "";
+	private int currencyToStart = 0;
+	private int durabilityMargin = 0;
 	
 	private static final Logger log = Logger.getLogger("Minecraft");
-	public Economy econ = null;
-	public boolean hasClearLag = false;
+	private Economy econ = null;
+	private boolean hasClearLag = false;
 
 	public void onEnable(){
 		plugin = this;
@@ -91,12 +92,22 @@ public class Shop extends JavaPlugin{
 
 		usePerms = getConfig().getBoolean("usePermissions");
 		useVault = getConfig().getConfigurationSection("Economy").getBoolean("useVault");
-		economyMaterial = Material.getMaterial(getConfig().getConfigurationSection("Economy").getString("itemCurrency (non-vault)"));
+		String itemCurrency = getConfig().getConfigurationSection("Economy").getString("itemCurrencyID (non-vault)");
+		int itemCurrencyId = -1;
+		int itemCurrencyData = 0;
+		if(itemCurrency.contains(";")){
+			itemCurrencyId = Integer.parseInt(itemCurrency.substring(0, itemCurrency.indexOf(";")));
+			itemCurrencyData = Integer.parseInt(itemCurrency.substring(itemCurrency.indexOf(";")+1, itemCurrency.length()));
+		}
+		else{
+			itemCurrencyId = Integer.parseInt(itemCurrency.substring(0, itemCurrency.length()));
+		}
+		economyMaterial = new MaterialData(itemCurrencyId, (byte)itemCurrencyData);
+		
 		economyDisplayName = getConfig().getConfigurationSection("Economy").getString("displayName")+"(s)";
 		currencyToStart = getConfig().getConfigurationSection("Economy").getInt("currencyToStartWith");
 		durabilityMargin = getConfig().getInt("maxDurabilityMargin");
 		
-		//TODO may need to add "[Shop]" string to front of log messages if they do not show the plugin name
 		if(useVault == true){
 			if (setupEconomy() == false) {
 				log.severe("[Shop]"+ChatColor.RED+"Plugin disabled due to no Vault dependency found on server!");
@@ -115,7 +126,7 @@ public class Shop extends JavaPlugin{
 				getServer().getPluginManager().disablePlugin(this);
 			}
 			else
-				log.info("[Shop] Shops will use "+economyMaterial.name().replace("_", " ").toLowerCase()+" as the currency on the server.");
+				log.info("[Shop] Shops will use "+economyMaterial.getItemType().name().replace("_", " ").toLowerCase()+" as the currency on the server.");
 		}
 		
 		if (getServer().getPluginManager().getPlugin("ClearLag") != null) {
@@ -187,4 +198,60 @@ public class Shop extends JavaPlugin{
         econ = rsp.getProvider();
         return econ != null;
     }
+
+    public static Shop getPlugin(){
+		return plugin;
+	}
+    
+	public ShopListener getShopListener(){
+		return shopListener;
+	}
+	
+	public DisplayItemListener getDisplayListener(){
+		return displayListener;
+	}
+	
+	public MiscListener getMiscListener(){
+		return miscListener;
+	}
+	
+	public ShopHandler getShopHandler(){
+		return shopHandler;
+	}
+	
+	public boolean usePerms(){
+		return usePerms;
+	}
+	
+	public boolean useVault(){
+		return useVault;
+	}
+	
+	public MaterialData getEconomyMaterial(){
+		return economyMaterial;
+	}
+	
+	public String getEconomyDisplayName(){
+		return economyDisplayName;
+	}
+	
+	public int getStartingCurrency(){
+		return currencyToStart;
+	}
+	
+	public int getDurabilityMargin(){
+		return durabilityMargin;
+	}
+	
+	public Logger getShopLogger(){
+		return log;
+	}
+	
+	public Economy getEconomy(){
+		return econ;
+	}
+	
+	public boolean hasClearLag(){
+		return hasClearLag;
+	}
 }

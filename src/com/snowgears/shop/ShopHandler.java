@@ -32,7 +32,7 @@ import org.bukkit.material.MaterialData;
 
 public class ShopHandler {
 	
-	public Shop plugin = Shop.plugin;
+	public Shop plugin = Shop.getPlugin();
 	
 	private HashMap<Location, ShopObject> allShops = new HashMap<Location, ShopObject>();
 	

@@ -115,27 +115,27 @@ public class ShopObject{
 		if(this.isAdminShop)
 			return true;
 		if(type == ShopType.SELLING){
-			int validItemsShopHas = Shop.plugin.miscListener.getAmount(getInventory(), this.getDisplayItem().getItemStack());
+			int validItemsShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), this.getDisplayItem().getItemStack());
 			//shop does not have enough items to make another sale
 			if(validItemsShopHas < this.getAmount())
 				return false;
 			
 			//using item economy
-			if(Shop.plugin.econ == null){
-				return inventoryHasRoom(new ItemStack(Shop.plugin.economyMaterial, (int)this.getPrice()));
+			if(Shop.getPlugin().getEconomy() == null){
+				return inventoryHasRoom(new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)this.getPrice()));
 			}
 		}
 		else if(type == ShopType.BUYING){
 			//using item economy
-			if(Shop.plugin.econ == null){
-				int currencyShopHas = Shop.plugin.miscListener.getAmount(getInventory(), new ItemStack(Shop.plugin.economyMaterial));
+			if(Shop.getPlugin().getEconomy() == null){
+				int currencyShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType()));
 				//shop does not have enough item currency in stock to make another sale
 				if(currencyShopHas < this.getPrice())
 					return false;
 			}
 			//using vault economy
 			else{
-				double currencyShopHas = Shop.plugin.econ.getBalance(this.getOwner());
+				double currencyShopHas = Shop.getPlugin().getEconomy().getBalance(this.getOwner());
 				//owner of shop does not have enough money for the shop to make a sale
 				if(currencyShopHas < this.getPrice())
 					return false;
@@ -159,10 +159,10 @@ public class ShopObject{
 			signBlock.setLine(1, "Bartering: "); //TODO, "Bartering: Dirt for Stone, etc...
 		
 		if((price % 1) == 0){
-			signBlock.setLine(2, ChatColor.GREEN+""+ price.intValue() +" "+ Shop.plugin.economyDisplayName);
+			signBlock.setLine(2, ChatColor.GREEN+""+ price.intValue() +" "+ Shop.getPlugin().getEconomyDisplayName());
 		}
 		else{
-			signBlock.setLine(2, ChatColor.GREEN+""+ price +" "+ Shop.plugin.economyDisplayName);
+			signBlock.setLine(2, ChatColor.GREEN+""+ price +" "+ Shop.getPlugin().getEconomyDisplayName());
 		}
 		
 		if(isAdminShop){
@@ -175,7 +175,6 @@ public class ShopObject{
 	}
 	
 	public void delete(){
-//		Shop.plugin.shopHandler.removeShop(this);
 		this.getDisplayItem().remove();
 		
 		Block b = this.getSignLocation().getBlock();

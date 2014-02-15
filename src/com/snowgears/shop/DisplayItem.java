@@ -30,14 +30,14 @@ public class DisplayItem{
 		ItemStack is = itemStack.clone();
 		ItemMeta im = is.getItemMeta();
 		Random rand = new Random();
-		im.setDisplayName(ChatColor.GRAY+"DisplayItem"+ChatColor.MAGIC+ rand.nextInt(1000));
+		im.setDisplayName(ChatColor.GRAY+"DisplayItem"+ChatColor.RED+ rand.nextInt(1000));
 		is.setItemMeta(im);
 		final Item i = shop.getLocation().getWorld().dropItem(shop.getLocation().clone().add(0.5,1.2,0.5), is);
 		i.setVelocity(new Vector(0, 0.1, 0));
-		i.setMetadata("DisplayItem", new FixedMetadataValue(Shop.plugin,0));
+		i.setMetadata("DisplayItem", new FixedMetadataValue(Shop.getPlugin(),0));
 		this.item = i;
 		
-		if(Shop.plugin.hasClearLag){
+		if(Shop.getPlugin().hasClearLag()){
 			Clearlag.getEntityManager.addUnremovableEntity(i.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
 		}
 	}
@@ -45,7 +45,7 @@ public class DisplayItem{
 	public void remove(){
 		if(item == null)
 			return;
-		if(Shop.plugin.hasClearLag){
+		if(Shop.getPlugin().hasClearLag()){
 			Clearlag.getEntityManager.removeUnremovableEntity(item.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
 		}
 		item.remove();
