@@ -65,7 +65,8 @@ public class MiscListener implements Listener{
 		if(player.hasPlayedBefore() == false){
 			if(plugin.getStartingCurrency() > 0){
 				if(plugin.getEconomy() == null){
-					ItemStack startItems = new ItemStack(plugin.getEconomyMaterial().getItemType(), plugin.getStartingCurrency());
+					ItemStack startItems = plugin.getEconomyItem().clone();
+					startItems.setAmount(plugin.getStartingCurrency());
 					player.getInventory().addItem(startItems);
 				}
 				else{
@@ -484,7 +485,7 @@ public class MiscListener implements Listener{
 				//player right clicked own sign
 				if(shop.getOwner().equals(player.getName())){
 					if(shop.getType() == ShopType.SELLING && !plugin.useVault()){
-						int amountOfMoney = getAmount(shop.getInventory(), new ItemStack(plugin.getEconomyMaterial().getItemType()));
+						int amountOfMoney = getAmount(shop.getInventory(), plugin.getEconomyItem());
 						player.sendMessage(ChatColor.GRAY+"This shop contains "+ChatColor.GREEN+amountOfMoney+ChatColor.GRAY+" "+plugin.getEconomyDisplayName()+".");
 					}
 					else if(shop.getType() == ShopType.BUYING){
@@ -507,7 +508,7 @@ public class MiscListener implements Listener{
 					if(shop.getType() == ShopType.SELLING){
 						//using item economy
 						if(plugin.getEconomy() == null){
-							int currencyPlayerHas = getAmount(player.getInventory(), new ItemStack(plugin.getEconomyMaterial().getItemType()));
+							int currencyPlayerHas = getAmount(player.getInventory(), plugin.getEconomyItem());
 							if(currencyPlayerHas < shop.getPrice()){
 								player.sendMessage(ChatColor.RED+"You do not have enough "+plugin.getEconomyDisplayName()+" to buy from this shop.");
 								return;

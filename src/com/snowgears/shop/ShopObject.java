@@ -122,13 +122,15 @@ public class ShopObject{
 			
 			//using item economy
 			if(Shop.getPlugin().getEconomy() == null){
-				return inventoryHasRoom(new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)this.getPrice()));
+				ItemStack is = Shop.getPlugin().getEconomyItem().clone();
+				is.setAmount((int)this.getPrice());
+				return inventoryHasRoom(is);
 			}
 		}
 		else if(type == ShopType.BUYING){
 			//using item economy
 			if(Shop.getPlugin().getEconomy() == null){
-				int currencyShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType()));
+				int currencyShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), Shop.getPlugin().getEconomyItem());
 				//shop does not have enough item currency in stock to make another sale
 				if(currencyShopHas < this.getPrice())
 					return false;

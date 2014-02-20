@@ -31,7 +31,8 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 					itemPlayerReceived.setAmount(shop.getAmount());
 				}
 				else if(shop.getType() == ShopType.BUYING){
-					itemPlayerReceived = new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)shop.getPrice());
+					itemPlayerReceived = Shop.getPlugin().getEconomyItem().clone();
+					itemPlayerReceived.setAmount((int)shop.getPrice());
 				}
 			}
 			else{
@@ -40,7 +41,8 @@ public class PlayerShopExchangeEvent extends Event implements Cancellable{
 			
 			if(shopReceivedItem()){
 				if(shop.getType() == ShopType.SELLING){
-					itemShopReceived = new ItemStack(Shop.getPlugin().getEconomyMaterial().getItemType(), (int)shop.getPrice());
+					itemShopReceived = Shop.getPlugin().getEconomyItem().clone();
+					itemShopReceived.setAmount((int)shop.getPrice());
 				}
 				else if(shop.getType() == ShopType.BUYING){
 					itemShopReceived = shop.getDisplayItem().getItemStack();

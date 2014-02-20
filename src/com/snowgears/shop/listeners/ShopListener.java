@@ -420,7 +420,7 @@ public class ShopListener implements Listener{
 	
 	public boolean canPutItemInShop(ShopObject shop, ItemStack item, Player p){
 		if(!plugin.useVault()){
-			if(item.getType() == plugin.getEconomyMaterial().getItemType())
+			if(item.getData().equals(plugin.getEconomyItem().getData()))
 				return true;
 		}
 		ItemStack di = shop.getDisplayItem().getItemStack();

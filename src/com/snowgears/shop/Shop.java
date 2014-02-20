@@ -6,7 +6,9 @@ import java.io.IOException;
 import java.util.logging.Logger;
 
 import org.bukkit.ChatColor;
+import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.inventory.ItemStack;
 import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -37,7 +39,7 @@ public class Shop extends JavaPlugin{
 	
 	private boolean usePerms = false;
 	private boolean useVault = false;
-	private MaterialData economyMaterial = null;
+	private ItemStack economyItem = null;
 	private String economyDisplayName = "";
 	private int currencyToStart = 0;
 	private int durabilityMargin = 0;
@@ -102,7 +104,8 @@ public class Shop extends JavaPlugin{
 		else{
 			itemCurrencyId = Integer.parseInt(itemCurrency.substring(0, itemCurrency.length()));
 		}
-		economyMaterial = new MaterialData(itemCurrencyId, (byte)itemCurrencyData);
+		economyItem = new ItemStack(Material.AIR,1);
+		economyItem.setData(new MaterialData(itemCurrencyId, (byte)itemCurrencyData));
 		
 		economyDisplayName = getConfig().getConfigurationSection("Economy").getString("displayName")+"(s)";
 		currencyToStart = getConfig().getConfigurationSection("Economy").getInt("currencyToStartWith");
@@ -120,13 +123,12 @@ public class Shop extends JavaPlugin{
 			}
 		}
 		else{
-			if(economyMaterial == null){
-				log.severe("[Shop]"+ChatColor.RED+"Plugin disabled due to an invalid material name in the configuration section \"Economy.itemCurrency (non-vault)\".");
-				log.info("[Shop]"+"Go to "+ChatColor.BLUE+"http://jd.bukkit.org/rb/apidocs/org/bukkit/Material.html"+ChatColor.BLACK+"for the full list of valid item names.");
+			if(economyItem.getType() == Material.AIR){
+				log.severe("[Shop]"+ChatColor.RED+"Plugin disabled due to an invalid item id in the configuration section \"Economy.itemCurrency (non-vault)\".");
 				getServer().getPluginManager().disablePlugin(this);
 			}
 			else
-				log.info("[Shop] Shops will use "+economyMaterial.getItemType().name().replace("_", " ").toLowerCase()+" as the currency on the server.");
+				log.info("[Shop] Shops will use "+economyItem.getType().name().replace("_", " ").toLowerCase()+" as the currency on the server.");
 		}
 		
 		if (getServer().getPluginManager().getPlugin("ClearLag") != null) {
@@ -227,8 +229,8 @@ public class Shop extends JavaPlugin{
 		return useVault;
 	}
 	
-	public MaterialData getEconomyMaterial(){
-		return economyMaterial;
+	public ItemStack getEconomyItem(){
+		return economyItem;
 	}
 	
 	public String getEconomyDisplayName(){
