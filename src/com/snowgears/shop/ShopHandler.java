@@ -36,21 +36,20 @@ public class ShopHandler {
 	
 	private HashMap<Location, ShopObject> allShops = new HashMap<Location, ShopObject>();
 	
-	public ShopHandler(Shop instance)
-    {
-        plugin = instance;
-    }
+	public ShopHandler(Shop instance) {
+		plugin = instance;
+	}
 	
-	public ShopObject getShop(Location loc){
+	public ShopObject getShop(Location loc) {
 		return allShops.get(loc);
 	}
 	
-	public void addShop(ShopObject shop){
+	public void addShop(ShopObject shop) {
 		allShops.put(shop.getLocation(), shop);
 	}
 	
-	public boolean removeShop(ShopObject shop){
-		if(allShops.containsKey(shop.getLocation())){
+	public boolean removeShop(ShopObject shop) {
+		if (allShops.containsKey(shop.getLocation())) {
 			allShops.remove(shop.getLocation());
 			shop.delete();
 			return true;
@@ -58,18 +57,19 @@ public class ShopHandler {
 		return false;
 	}
 
-	public void removeShopItems(){
-    	for(ShopObject shop : allShops.values())
-    		shop.getDisplayItem().remove();
-    }
+	public void removeShopItems() {
+		for (ShopObject shop : allShops.values()) {
+			shop.getDisplayItem().remove();
+		}
+	}
 	
-	public int getNumberOfShops(){
+	public int getNumberOfShops() {
 		return allShops.size();
 	}
 
-	private ArrayList<ShopObject> orderedShopList(){
+	private ArrayList<ShopObject> orderedShopList() {
 		ArrayList<ShopObject> list = new ArrayList<ShopObject>(allShops.values());
-		Collections.sort(list, new Comparator<ShopObject>(){
+		Collections.sort(list, new Comparator<ShopObject>() {
 			@Override
 			public int compare(ShopObject o1, ShopObject o2) {
 				return o1.getOwner().toLowerCase().compareTo(o2.getOwner().toLowerCase());
@@ -78,25 +78,26 @@ public class ShopHandler {
 		return list;
 	}
 	
-	public void refreshShopItems(){
-		for(ShopObject shop : allShops.values()){
+	public void refreshShopItems() {
+		for (ShopObject shop : allShops.values()) {
 			shop.getDisplayItem().refresh();
 		}
 	}
 	
-	public void saveShops(){
+	public void saveShops() {
 		File fileDirectory = new File(plugin.getDataFolder(), "Data");
-		if(!fileDirectory.exists())
+		if (!fileDirectory.exists()) {
 			fileDirectory.mkdir();
+		}
 		File shopFile = new File(fileDirectory + "/shops.yml");
-		if(! shopFile.exists()){ // file doesn't exist
+		if (! shopFile.exists()) { // file doesn't exist
 			try {
 				shopFile.createNewFile();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		else{ //does exist, clear it for future saving
+		else { //does exist, clear it for future saving
 			PrintWriter writer = null;
 			try {
 				writer = new PrintWriter(shopFile);
@@ -111,128 +112,138 @@ public class ShopHandler {
 		ArrayList<ShopObject> shopList = orderedShopList();
 		
 		int shopNumber = 1;
-		for(int i=0; i<shopList.size(); i++)
-		{
+		for (int i=0; i<shopList.size(); i++) {
 			ShopObject s = shopList.get(i);
-//			config.set("shops."+s.getOwner()+"."+shopNumber+".location", locationToString(s.getLocation()));
-			config.set("shops."+s.getOwner()+"."+shopNumber+".location", locationToString(s.getSignLocation()));
-			config.set("shops."+s.getOwner()+"."+shopNumber+".price", s.getPrice());
-			config.set("shops."+s.getOwner()+"."+shopNumber+".amount", s.getAmount()); 
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".location", locationToString(s.getSignLocation()));
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".price", s.getPrice());
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".amount", s.getAmount()); 
 			String type = "";
-			if(s.isAdminShop())
+			if (s.isAdminShop()) {
 				type = "admin ";
+			}
 			type = type + s.getType().getName();
-			config.set("shops."+s.getOwner()+"."+shopNumber+".type", type);
-			config.set("shops."+s.getOwner()+"."+shopNumber+".timesUsed", s.getTimesUsed());
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".type", type);
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".timesUsed", s.getTimesUsed());
 			
 			ItemStack displayStack = s.getDisplayItem().getItemStack();
 			ItemMeta im = displayStack.getItemMeta();
-			if(im.getDisplayName() != null)
-				config.set("shops."+s.getOwner()+"."+shopNumber+".item.name", im.getDisplayName());
-			else
-				config.set("shops."+s.getOwner()+"."+shopNumber+".item.name", "");
-			config.set("shops."+s.getOwner()+"."+shopNumber+".item.data", dataToString(displayStack.getData()));
-			config.set("shops."+s.getOwner()+"."+shopNumber+".item.durability", displayStack.getDurability());
-			config.set("shops."+s.getOwner()+"."+shopNumber+".item.enchantments", enchantmentsToString(displayStack.getEnchantments()));
-			if(im.getLore() != null)
-				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", im.getLore().toString());
-			else
-				config.set("shops."+s.getOwner()+"."+shopNumber+".item.lore", "[]");
+			if (im.getDisplayName() != null) {
+				config.set("shops." + s.getOwner() + "." + shopNumber + ".item.name", im.getDisplayName());
+			}
+			else {
+				config.set("shops." + s.getOwner() + "." + shopNumber + ".item.name", "");
+			}
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".item.data", dataToString(displayStack.getData()));
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".item.durability", displayStack.getDurability());
+			config.set("shops." + s.getOwner() + "." + shopNumber + ".item.enchantments", enchantmentsToString(displayStack.getEnchantments()));
+			if (im.getLore() != null) {
+				config.set("shops." + s.getOwner() + "." + shopNumber + ".item.lore", im.getLore().toString());
+			}
+			else {
+				config.set("shops." + s.getOwner() + "." + shopNumber + ".item.lore", "[]");
+			}
 			
 			s.delete();
 			
 			shopNumber++;
 			//reset shop number if next shop has a different owner
-			if(i < shopList.size()-1){
-				if(!(s.getOwner().equals(shopList.get(i+1).getOwner())))
+			if (i < shopList.size()-1) {
+				if (!(s.getOwner().equals(shopList.get(i+1).getOwner()))) {
 					shopNumber = 1;
+				}
 			}
 		}
 		 
-		 try
-		    {
-		        config.save(shopFile);
-		    }
-		    catch(IOException ioe)
-		    {
-		        ioe.printStackTrace();
-		    }
+		try {
+			config.save(shopFile);
+		}
+		catch(IOException ioe) {
+			ioe.printStackTrace();
+		}
 	}
 	
-	public void loadShops(){
+	public void loadShops() {
 		File fileDirectory = new File(plugin.getDataFolder(), "Data");
-		if(!fileDirectory.exists())
+		if (!fileDirectory.exists()) {
 			return;
+		}
+
 		File shopFile = new File(fileDirectory + "/shops.yml");
-		if(! shopFile.exists())
+		if (! shopFile.exists()) {
 			return;
+		}
+
 		File backupShopFile = new File(fileDirectory + "/shopsBackup.yml");
-		if(! backupShopFile.exists()){
+		if (! backupShopFile.exists()) {
 			try {
 				backupShopFile.createNewFile();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			
-		//shopFile is empty and backup is not
-		if(backupShopFile.length() > 0 && shopFile.length() == 0){
-			try {
-				copyFile(backupShopFile, shopFile);
-			} catch (IOException e) {
-				e.printStackTrace();
+				
+			//shopFile is empty and backup is not
+			if (backupShopFile.length() > 0 && shopFile.length() == 0) {
+				try {
+					copyFile(backupShopFile, shopFile);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		}
-		else{
-			try {
-				copyFile(shopFile, backupShopFile); //make a backup of the file before loading in case of corruption
-			} catch (IOException e) {
-				e.printStackTrace();
+			else {
+				try {
+					copyFile(shopFile, backupShopFile); //make a backup of the file before loading in case of corruption
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
 			}
-		}
 		}
 		
 		YamlConfiguration config = YamlConfiguration.loadConfiguration(shopFile);
 		loadShopsFromConfig(config);
 	}
 	
-	private void loadShopsFromConfig(YamlConfiguration config){
+	private void loadShopsFromConfig(YamlConfiguration config) {
 
-		if(config.getConfigurationSection("shops") == null)
+		if (config.getConfigurationSection("shops") == null) {
 			return;
+		}
+
 		Set<String> allShopOwners = config.getConfigurationSection("shops").getKeys(false);
 
-		for(String shopOwner : allShopOwners){
-			Set<String> allShopNumbers = config.getConfigurationSection("shops."+shopOwner).getKeys(false);
-			for(String shopNumber : allShopNumbers){
-//				Location loc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".location"));
-				Location signLoc = locationFromString(config.getString("shops."+shopOwner+"."+shopNumber+".location"));
+		for (String shopOwner : allShopOwners) {
+			Set<String> allShopNumbers = config.getConfigurationSection("shops." + shopOwner).getKeys(false);
+			for (String shopNumber : allShopNumbers) {
+				Location signLoc = locationFromString(config.getString("shops." + shopOwner + "." + shopNumber + ".location"));
 				Block b = signLoc.getBlock();
-				if(b.getType() == Material.WALL_SIGN){
+				if (b.getType() == Material.WALL_SIGN) {
 					org.bukkit.material.Sign sign = (org.bukkit.material.Sign)b.getState().getData();
 					Location loc = b.getRelative(sign.getAttachedFace()).getLocation();
-					double price = Double.parseDouble(config.getString("shops."+shopOwner+"."+shopNumber+".price"));
-					int amount = Integer.parseInt(config.getString("shops."+shopOwner+"."+shopNumber+".amount"));
-					String type = config.getString("shops."+shopOwner+"."+shopNumber+".type");
+					double price = Double.parseDouble(config.getString("shops." + shopOwner + "." + shopNumber + ".price"));
+					int amount = Integer.parseInt(config.getString("shops." + shopOwner + "." + shopNumber + ".amount"));
+					String type = config.getString("shops." + shopOwner + "." + shopNumber + ".type");
 					boolean isAdmin = false;
-					if(type.contains("admin"))
+					if (type.contains("admin")) 7
 						isAdmin = true;
+				}
 					ShopType shopType = typeFromString(type);
-					int timesUsed = config.getInt("shops."+shopOwner+"."+shopNumber+".timesUsed");
+					int timesUsed = config.getInt("shops." + shopOwner + "." + shopNumber + ".timesUsed");
 					
-					MaterialData data = dataFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.data"));
+					MaterialData data = dataFromString(config.getString("shops." + shopOwner + "." + shopNumber + ".item.data"));
 					ItemStack is = new ItemStack(data.getItemType());
 					is.setData(data);
-					short durability = (short)(config.getInt("shops."+shopOwner+"."+shopNumber+".item.durability"));
+					short durability = (short)(config.getInt("shops." + shopOwner + "." + shopNumber + ".item.durability"));
 					is.setDurability(durability);
 					ItemMeta im = is.getItemMeta();
-					String name = config.getString("shops."+shopOwner+"."+shopNumber+".item.name");
-					if(!name.isEmpty())
-						im.setDisplayName(config.getString("shops."+shopOwner+"."+shopNumber+".item.name"));
-					List<String> lore = loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore"));
-					if(lore.size() > 1)
-						im.setLore(loreFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.lore")));
+					String name = config.getString("shops." + shopOwner + "." + shopNumber + ".item.name");
+					if (!name.isEmpty()) {
+						im.setDisplayName(config.getString("shops." + shopOwner + "." + shopNumber + ".item.name"));
+					}
+					List<String> lore = loreFromString(config.getString("shops." + shopOwner + "." + shopNumber + ".item.lore"));
+					if (lore.size() > 1) {
+						im.setLore(loreFromString(config.getString("shops." + shopOwner + "." + shopNumber + ".item.lore")));
+					}
 					is.setItemMeta(im);
-					is.addUnsafeEnchantments(enchantmentsFromString(config.getString("shops."+shopOwner+"."+shopNumber+".item.enchantments")));
+					is.addUnsafeEnchantments(enchantmentsFromString(config.getString("shops." + shopOwner + "." + shopNumber + ".item.enchantments")));
 					
 					ShopObject shop = new ShopObject(loc, signLoc, shopOwner, is, price, amount, isAdmin, shopType, timesUsed);
 					shop.updateSign();
@@ -242,50 +253,50 @@ public class ShopHandler {
 		}
 	}
 	
-	private String locationToString(Location loc){
-		return loc.getWorld().getName()+","+loc.getBlockX()+","+loc.getBlockY()+","+loc.getBlockZ();
+	private String locationToString(Location loc) {
+		return loc.getWorld().getName() + "," + loc.getBlockX() + "," + loc.getBlockY() + "," + loc.getBlockZ();
 	}
 	
-	private Location locationFromString(String locString){
+	private Location locationFromString(String locString) {
 		String[] parts = locString.split(",");
 		return new Location(plugin.getServer().getWorld(parts[0]), Double.parseDouble(parts[1]), Double.parseDouble(parts[2]), Double.parseDouble(parts[3]));
 	}
 	
-	private List<String> loreFromString(String loreString){
+	private List<String> loreFromString(String loreString) {
 		loreString = loreString.substring(1, loreString.length()-1); //get rid of []
 		String[] loreParts = loreString.split(", ");
 		return Arrays.asList(loreParts);
 	}
 	
-	private String enchantmentsToString(Map<Enchantment, Integer> enchantments){
+	private String enchantmentsToString(Map<Enchantment, Integer> enchantments) {
 		HashMap<String, Integer> futureString = new HashMap<String, Integer>();
-		for(Entry<Enchantment, Integer> s : enchantments.entrySet()){
+		for (Entry<Enchantment, Integer> s : enchantments.entrySet()) {
 			futureString.put(s.getKey().getName(), s.getValue());
 		}
 		return futureString.toString();
 	}
 	
-	private HashMap<Enchantment, Integer> enchantmentsFromString(String enchantments){
+	private HashMap<Enchantment, Integer> enchantmentsFromString(String enchantments) {
 		HashMap<Enchantment, Integer> enchants = new HashMap<Enchantment, Integer>();
 		enchantments = enchantments.substring(1, enchantments.length()-1); //get rid of {}
-		if(enchantments.isEmpty())
+		if (enchantments.isEmpty()) {
 			return enchants;
+		}
+
 		String[] enchantParts = enchantments.split(", ");
-		for(String whole : enchantParts){
+		for (String whole : enchantParts) {
 			String[] pair = whole.split("=");
 			enchants.put(Enchantment.getByName(pair[0]), Integer.parseInt(pair[1]));
 		}
 		return enchants;
 	}
 	
-	private String dataToString(MaterialData md){
-		return md.getItemType().name()+"("+md.getData()+")";
+	private String dataToString(MaterialData md) {
+		return md.getItemType().name() + "(" + md.getData() + ")";
 	}
 	
-	private MaterialData dataFromString(String dataString){
+	private MaterialData dataFromString(String dataString) {
 		int index = dataString.indexOf("(");
-//		System.out.println(dataString.substring(0, index));
-//		System.out.println(dataString.substring(index+1, dataString.length()-1));
 		String materialString = dataString.substring(0, index);
 		Material m = Material.getMaterial(materialString);
 		int data = Integer.parseInt(dataString.substring(index+1, dataString.indexOf(")")));
@@ -293,30 +304,32 @@ public class ShopHandler {
 		return new MaterialData(m, (byte)data);
 	}
 	
-	private ShopType typeFromString(String typeString){
-		if(typeString.contains("selling"))
+	private ShopType typeFromString(String typeString) {
+		if (typeString.contains("selling")) {
 			return ShopType.SELLING;
-		else if(typeString.contains("buying"))
+		}
+		else if (typeString.contains("buying")) {
 			return ShopType.BUYING;
-		else
+		}
+		else {
 			return ShopType.BARTER;
+		}
 	}
 	
-	private static void copyFile(File source, File dest)
-	        throws IOException {
-	    InputStream input = null;
-	    OutputStream output = null;
-	    try {
-	        input = new FileInputStream(source);
-	        output = new FileOutputStream(dest);
-	        byte[] buf = new byte[1024];
-	        int bytesRead;
-	        while ((bytesRead = input.read(buf)) > 0) {
-	            output.write(buf, 0, bytesRead);
-	        }
-	    } finally {
-	        input.close();
-	        output.close();
-	    }
+	private static void copyFile(File source, File dest) throws IOException {
+		InputStream input = null;
+		OutputStream output = null;
+		try {
+			input = new FileInputStream(source);
+			output = new FileOutputStream(dest);
+			byte[] buf = new byte[1024];
+			int bytesRead;
+			while ((bytesRead = input.read(buf)) > 0) {
+				output.write(buf, 0, bytesRead);
+			}
+		} finally {
+			input.close();
+			output.close();
+		}
 	}
 }

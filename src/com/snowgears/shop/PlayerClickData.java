@@ -16,7 +16,7 @@ public class PlayerClickData {
 	private boolean isAdminShop;
 	private ShopType shopType;
 	
-	public PlayerClickData(Player p, Location l, double price, int amt, boolean admin, ShopType type){
+	public PlayerClickData(Player p, Location l, double price, int amt, boolean admin, ShopType type) {
 		player = p.getName();
 		oldGameMode = p.getGameMode();
 		signLocation = l;
@@ -26,38 +26,38 @@ public class PlayerClickData {
 		shopType = type;
 	}
 	
-	public Player getPlayer(){
+	public Player getPlayer() {
 		return Bukkit.getPlayer(player);
 	}
 	
-	public GameMode getOldGameMode(){
+	public GameMode getOldGameMode() {
 		return oldGameMode;
 	}
 	
-	public Location getChestLocation(){
+	public Location getChestLocation() {
 		Block b = signLocation.getBlock();
 		org.bukkit.material.Sign sign = (org.bukkit.material.Sign)b.getState().getData();
 		return b.getRelative(sign.getAttachedFace()).getLocation();
 		
 	}
 	
-	public Location getSignLocation(){
+	public Location getSignLocation() {
 		return signLocation;
 	}
 
-	public double getShopPrice(){
+	public double getShopPrice() {
 		return shopPrice;
 	}
 	
-	public int getShopAmount(){
+	public int getShopAmount() {
 		return shopAmount;
 	}
 	
-	public boolean getShopAdmin(){
+	public boolean getShopAdmin() {
 		return isAdminShop;
 	}
 	
-	public ShopType getShopType(){
+	public ShopType getShopType() {
 		return shopType;
 	}
 }

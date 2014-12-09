@@ -48,28 +48,26 @@ public class Shop extends JavaPlugin{
 	private Economy econ = null;
 	private boolean hasClearLag = false;
 
-	public void onEnable(){
+	public void onEnable() {
 		plugin = this;
 		getServer().getPluginManager().registerEvents(shopListener, this);
 		getServer().getPluginManager().registerEvents(displayListener, this);
 		getServer().getPluginManager().registerEvents(miscListener, this);
 		
 		try {
-		    Metrics metrics = new Metrics(this);
-		    metrics.start();
+			Metrics metrics = new Metrics(this);
+			metrics.start();
 		} catch (IOException e) {
-		    // Failed to submit the stats
+			// Failed to submit the stats
 		}
 
 		final File configFile = new File(this.getDataFolder() + "/config.yml");
-		if(!configFile.exists())
-		{
+		if (!configFile.exists()) {
 		  this.saveDefaultConfig();
 		}
 
 		File fileDirectory = new File(this.getDataFolder(), "Data");
-		if(!fileDirectory.exists())
-		{
+		if (!fileDirectory.exists()) {
 			boolean success = false;
 			success = (fileDirectory.mkdirs());
 			if (!success) {
@@ -79,10 +77,11 @@ public class Shop extends JavaPlugin{
 		
 		Updater updater = null;
 		boolean autoUpdate = getConfig().getBoolean("AUTO-UPDATE");
-		if(autoUpdate)
+		if (autoUpdate) {
 			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.DEFAULT, false);
+		}
 		
-		if(updater != null && updater.getResult() == UpdateResult.SUCCESS){
+		if (updater != null && updater.getResult() == UpdateResult.SUCCESS) {
 			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() { 
 				public void run() { 
 					configFile.delete();
@@ -97,13 +96,14 @@ public class Shop extends JavaPlugin{
 		String itemCurrency = getConfig().getConfigurationSection("Economy").getString("itemCurrencyID (non-vault)");
 		int itemCurrencyId = -1;
 		int itemCurrencyData = 0;
-		if(itemCurrency.contains(";")){
+		if (itemCurrency.contains(";")) {
 			itemCurrencyId = Integer.parseInt(itemCurrency.substring(0, itemCurrency.indexOf(";")));
 			itemCurrencyData = Integer.parseInt(itemCurrency.substring(itemCurrency.indexOf(";")+1, itemCurrency.length()));
 		}
-		else{
+		else {
 			itemCurrencyId = Integer.parseInt(itemCurrency.substring(0, itemCurrency.length()));
 		}
+
 		economyItem = new ItemStack(Material.AIR,1);
 		economyItem.setData(new MaterialData(itemCurrencyId, (byte)itemCurrencyData));
 		
@@ -111,61 +111,62 @@ public class Shop extends JavaPlugin{
 		currencyToStart = getConfig().getConfigurationSection("Economy").getInt("currencyToStartWith");
 		durabilityMargin = getConfig().getInt("maxDurabilityMargin");
 		
-		if(useVault == true){
+		if (useVault == true) {
 			if (setupEconomy() == false) {
 				log.severe("[Shop]"+ChatColor.RED+"Plugin disabled due to no Vault dependency found on server!");
 				log.info("[Shop] If you do not wish to use Vault with Shop, make sure to set 'useVault' in the config file to false.");
-	            getServer().getPluginManager().disablePlugin(this);
-	            return;
-	        }
-			else{
+				getServer().getPluginManager().disablePlugin(this);
+				return;
+			}
+			else {
 				log.info("[Shop] Vault dependancy found. Shops will use the vault economy for currency on the server.");
 			}
 		}
-		else{
-			if(economyItem.getType() == Material.AIR){
+		else {
+			if (economyItem.getType() == Material.AIR) {
 				log.severe("[Shop]"+ChatColor.RED+"Plugin disabled due to an invalid item id in the configuration section \"Economy.itemCurrency (non-vault)\".");
 				getServer().getPluginManager().disablePlugin(this);
 			}
-			else
+			else {
 				log.info("[Shop] Shops will use "+economyItem.getType().name().replace("_", " ").toLowerCase()+" as the currency on the server.");
+			}
 		}
 		
 		if (getServer().getPluginManager().getPlugin("ClearLag") != null) {
-            hasClearLag = true;
-        }
+			hasClearLag = true;
+		}
 		
 		shopFile = new File(fileDirectory + "/shops.yml");
 		
-		if(! shopFile.exists()){ // file doesn't exist
+		if (! shopFile.exists()) { // file doesn't exist
 			try {
 				shopFile.createNewFile();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
-		else{ //file does exist
+		else { //file does exist
 			if (shopFile.length() > 0 ) { //file contains something
 				shopHandler.loadShops();
 			}
 		}
 	}
 	
-	public void onDisable(){
+	public void onDisable() {
 		shopHandler.saveShops();
 		plugin = null;
 	}
 	
 	@Override
 	public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-		if(args.length == 1){
+		if (args.length == 1) {
 			if ((cmd.getName().equalsIgnoreCase("shop") && args[0].equalsIgnoreCase("list"))) {
 				sender.sendMessage("There are "+ChatColor.GOLD+shopHandler.getNumberOfShops()+ChatColor.WHITE+" shops registered on the server.");
 			}
 			else if ((cmd.getName().equalsIgnoreCase("shop") && args[0].equalsIgnoreCase("refresh"))) {
-				if(sender instanceof Player){
+				if (sender instanceof Player) {
 					Player player = (Player)sender;
-					if((usePerms && !player.hasPermission("shop.operator")) || !player.isOp()){
+					if ((usePerms && !player.hasPermission("shop.operator")) || !player.isOp()) {
 						player.sendMessage(ChatColor.RED+"You are not authorized to use that command.");
 						return true;
 					}
@@ -175,85 +176,76 @@ public class Shop extends JavaPlugin{
 			}
 			return true;
 		}
-        return false;
-    }
+		return false;
+	}
 	
-//    public void respawnAllShopItems(){
-//    	for(final ShopObject shop : shopListener.allShops){
-//			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() { 
-//				public void run() { 
-//					shop.displayItem.respawn();
-//					} 
-//			}, 5L); 
-//		}
-//    }
-//    
-  
-    private boolean setupEconomy() {
-        if (getServer().getPluginManager().getPlugin("Vault") == null) {
-            return false;
-        }
-        RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
-        if (rsp == null) {
-            return false;
-        }
-        econ = rsp.getProvider();
-        return econ != null;
-    }
+	private boolean setupEconomy() {
+		if (getServer().getPluginManager().getPlugin("Vault") == null) {
+			return false;
+		}
 
-    public static Shop getPlugin(){
+		RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+		if (rsp == null) {
+			return false;
+		}
+
+		econ = rsp.getProvider();
+		return econ != null;
+	}
+
+	public static Shop getPlugin() {
 		return plugin;
 	}
-    
-	public ShopListener getShopListener(){
+	
+	public ShopListener getShopListener() {
 		return shopListener;
 	}
 	
-	public DisplayItemListener getDisplayListener(){
+	public DisplayItemListener getDisplayListener() {
 		return displayListener;
 	}
 	
-	public MiscListener getMiscListener(){
+	public MiscListener getMiscListener() {
 		return miscListener;
 	}
 	
-	public ShopHandler getShopHandler(){
+	public ShopHandler getShopHandler() {
 		return shopHandler;
 	}
 	
-	public boolean usePerms(){
+	public boolean usePerms() {
 		return usePerms;
 	}
 	
-	public boolean useVault(){
+	public boolean useVault() {
 		return useVault;
 	}
 	
-	public ItemStack getEconomyItem(){
+	public ItemStack getEconomyItem() {
 		return economyItem;
 	}
 	
-	public String getEconomyDisplayName(){
+	public String getEconomyDisplayName() {
 		return economyDisplayName;
 	}
 	
-	public int getStartingCurrency(){
+	public int getStartingCurrency() {
 		return currencyToStart;
 	}
 	
-	public int getDurabilityMargin(){
+	public int getDurabilityMargin() {
 		return durabilityMargin;
 	}
 	
-	public Logger getShopLogger(){
+	public Logger getShopLogger() {
 		return log;
 	}
 	
-	public Economy getEconomy(){
+	public Economy getEconomy() {
 		return econ;
 	}
 	
-	public boolean hasClearLag(){
+	public boolean hasClearLag() {
 		return hasClearLag;
 	}
 }

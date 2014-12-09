@@ -19,11 +19,14 @@ public enum ShopType {
     }
     
     public String getName(){
-    	if(this == ShopType.SELLING)
+    	if(this == ShopType.SELLING) {
     		return "selling";
-    	else if(this == ShopType.BUYING)
+        }
+        else if(this == ShopType.BUYING) {
     		return "buying";
-    	else
+        }
+        else {
     		return "barter";
+        }
     }
 }

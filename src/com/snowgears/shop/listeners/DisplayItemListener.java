@@ -13,63 +13,48 @@ import org.bukkit.event.player.PlayerPickupItemEvent;
 import com.snowgears.shop.Shop;
 import com.snowgears.shop.ShopObject;
 
-public class DisplayItemListener implements Listener{
+public class DisplayItemListener implements Listener {
 
 	public Shop plugin = Shop.getPlugin();
 	
-	public DisplayItemListener(Shop instance)
-    {
-        plugin = instance;
-    }
-
-	@EventHandler
-	public void onItemPickup(PlayerPickupItemEvent event){
-		if(event.getItem().hasMetadata("DisplayItem")){
-			event.setCancelled(true);
-			return;
-		}
-//		Location shopLoc = event.getItem().getLocation().getBlock().getRelative(BlockFace.DOWN).getLocation();
-//		ShopObject shop = Shop.getShopHandler().getShop(shopLoc);
-//		if(shop == null)
-//			return;
-//
-//		if(shop.getDisplayItem().getUniqueId().equals(event.getItem().getUniqueId())){
-//			event.setCancelled(true);
-//			return;
-//		}	
+	public DisplayItemListener(Shop instance) {
+		plugin = instance;
 	}
 
 	@EventHandler
-	public void onWaterFlow(BlockFromToEvent event){
-		ShopObject shop = plugin.getShopHandler().getShop(event.getToBlock().getRelative(BlockFace.DOWN).getLocation());
-		if(shop != null)
+	public void onItemPickup(PlayerPickupItemEvent event) {
+		if (event.getItem().hasMetadata("DisplayItem")) {
 			event.setCancelled(true);
+			return;
+		}
+	}
+
+	@EventHandler
+	public void onWaterFlow(BlockFromToEvent event) {
+		ShopObject shop = plugin.getShopHandler().getShop(event.getToBlock().getRelative(BlockFace.DOWN).getLocation());
+		if (shop != null) {
+			event.setCancelled(true);
+		}
 	}
 
 	@EventHandler (priority = EventPriority.HIGHEST)
-	public void onItemDespawn(ItemDespawnEvent event){
-		if(event.getEntity().hasMetadata("DisplayItem")){
+	public void onItemDespawn(ItemDespawnEvent event) {
+		if (event.getEntity().hasMetadata("DisplayItem")) {
 			event.setCancelled(true);
 			return;
 		}
-//		for(ShopObject shop : plugin.alisten.allShops){
-//			if(shop.getDisplayItem().getUniqueId().equals(event.getEntity().getUniqueId())){
-//				event.setCancelled(true);
-////				shop.displayItem.respawn();
-//				return;
-//			}	
-//		}
 	}
 	
 	@EventHandler (priority = EventPriority.HIGH)
-	public void onBlockPlace(BlockPlaceEvent event){
+	public void onBlockPlace(BlockPlaceEvent event) {
 		ShopObject shop = plugin.getShopHandler().getShop(event.getBlock().getRelative(BlockFace.DOWN).getLocation());
-		if(shop != null)
+		if (shop != null) {
 			event.setCancelled(true);
+		}
 	}
 	
 	@EventHandler (priority = EventPriority.HIGHEST)
-	public void onCreatureSpawn(CreatureSpawnEvent event){
+	public void onCreatureSpawn(CreatureSpawnEvent event) {
 		event.getEntity().setCanPickupItems(false);
 	}
 }

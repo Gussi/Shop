@@ -16,7 +16,7 @@ public class DisplayItem{
 	private ItemStack itemStack;
 	private ShopObject shop;
 	
-	public DisplayItem(ItemStack is, ShopObject s){
+	public DisplayItem(ItemStack is, ShopObject s) {
 		itemStack = is.clone();
 		itemStack.setAmount(1);
 		shop = s;
@@ -24,9 +24,11 @@ public class DisplayItem{
 		spawn();
 	}
 	
-	public void spawn(){
-		if(item != null)
+	public void spawn() {
+		if (item != null) {
 			return;
+		}
+
 		ItemStack is = itemStack.clone();
 		ItemMeta im = is.getItemMeta();
 		Random rand = new Random();
@@ -37,36 +39,37 @@ public class DisplayItem{
 		i.setMetadata("DisplayItem", new FixedMetadataValue(Shop.getPlugin(),0));
 		this.item = i;
 		
-		if(Shop.getPlugin().hasClearLag()){
+		if (Shop.getPlugin().hasClearLag()) {
 			Clearlag.getEntityManager.addUnremovableEntity(i.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
 		}
 	}
 	
-	public void remove(){
-		if(item == null)
+	public void remove() {
+		if (item == null) {
 			return;
-		if(Shop.getPlugin().hasClearLag()){
+		}
+
+		if (Shop.getPlugin().hasClearLag()) {
 			Clearlag.getEntityManager.removeUnremovableEntity(item.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
 		}
 		item.remove();
 		item = null;
 	}
 	
-	public void refresh(){
+	public void refresh() {
 		remove();
 		spawn();
 	}
 	
-	public ItemStack getItemStack(){
+	public ItemStack getItemStack() {
 		return itemStack;
 	}
 	
-	public Item getRawItem(){
+	public Item getRawItem() {
 		return item;
 	}
 	
-	public ShopObject getShop(){
+	public ShopObject getShop() {
 		return shop;
 	}
-
 }

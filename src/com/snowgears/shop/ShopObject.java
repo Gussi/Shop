@@ -29,7 +29,7 @@ public class ShopObject{
 			Integer amt,
 			Boolean admin,
 			ShopType t,
-			int amtUsed){ 
+			int amtUsed) { 
 		location = loc;
 		signLocation = signLoc;
 		owner = player;
@@ -42,105 +42,110 @@ public class ShopObject{
 		displayItem = new DisplayItem(is, this);
 	}
 	
-	public Location getLocation(){
+	public Location getLocation() {
 		return location;
 	}
 	
-	public Inventory getInventory(){
+	public Inventory getInventory() {
 		return ((Chest)location.getBlock().getState()).getInventory();
 	}
 	
-	public Location getSignLocation(){
+	public Location getSignLocation() {
 		return signLocation;
 	}
 
-	public String getOwner(){
+	public String getOwner() {
 		return owner;
 	}
 	
-	public DisplayItem getDisplayItem(){
+	public DisplayItem getDisplayItem() {
 		return displayItem;
 	}
 	
-	public double getPrice(){
+	public double getPrice() {
 		return price;
 	}
 	
-	public int getAmount(){
+	public int getAmount() {
 		return amount;
 	}
 
-	public boolean isAdminShop(){
+	public boolean isAdminShop() {
 		return isAdminShop;
 	}
 	
-	public ShopType getType(){
+	public ShopType getType() {
 		return type;
 	}
 	
-	public int getTimesUsed(){
+	public int getTimesUsed() {
 		return timesUsed;
 	}
 	
-	public void addUse(){
+	public void addUse() {
 		timesUsed++;
 	}
 	
-	public void setOwner(String s){
+	public void setOwner(String s) {
 		owner = s;
 		updateSign();
 	}
 	
-	public void setPrice(double d){
+	public void setPrice(double d) {
 		price = d;
 		updateSign();
 	}
 	
-	public void setAmount(int a){
+	public void setAmount(int a) {
 		amount = a;
 		updateSign();
 	}
 	
-	public void setType(ShopType t){
+	public void setType(ShopType t) {
 		type = t;
 		updateSign();
 	}
 	
-	public void setAdmin(boolean b){
+	public void setAdmin(boolean b) {
 		isAdminShop = b;
 		updateSign();
 	}
 	
-	public boolean canAcceptAnotherTransaction(){
-		if(this.isAdminShop)
+	public boolean canAcceptAnotherTransaction() {
+		if (this.isAdminShop) {
 			return true;
-		if(type == ShopType.SELLING){
+		}
+
+		if (type == ShopType.SELLING) {
 			int validItemsShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), this.getDisplayItem().getItemStack());
 			//shop does not have enough items to make another sale
-			if(validItemsShopHas < this.getAmount())
+			if (validItemsShopHas < this.getAmount()) {
 				return false;
+			}
 			
 			//using item economy
-			if(Shop.getPlugin().getEconomy() == null){
+			if (Shop.getPlugin().getEconomy() == null) {
 				ItemStack is = Shop.getPlugin().getEconomyItem().clone();
 				is.setAmount((int)this.getPrice());
 				return inventoryHasRoom(is);
 			}
 		}
-		else if(type == ShopType.BUYING){
+		else if (type == ShopType.BUYING) {
 			//using item economy
-			if(Shop.getPlugin().getEconomy() == null){
+			if (Shop.getPlugin().getEconomy() == null) {
 				int currencyShopHas = Shop.getPlugin().getMiscListener().getAmount(getInventory(), Shop.getPlugin().getEconomyItem());
 				//shop does not have enough item currency in stock to make another sale
-				if(currencyShopHas < this.getPrice())
+				if (currencyShopHas < this.getPrice()) {
 					return false;
+				}
 			}
 			//using vault economy
-			else{
+			else {
 				double currencyShopHas = Shop.getPlugin().getEconomy().getBalance(this.getOwner());
 				//owner of shop does not have enough money for the shop to make a sale
-				if(currencyShopHas < this.getPrice())
+				if (currencyShopHas < this.getPrice()) {
 					return false;
+				}
 			}
 			ItemStack stackToGoInShop = this.getDisplayItem().getItemStack().clone();
 			stackToGoInShop.setAmount(this.getAmount());
@@ -149,38 +154,41 @@ public class ShopObject{
 		return true;
 	}
 	
-	public void updateSign(){
+	public void updateSign() {
 		Sign signBlock = (Sign)signLocation.getBlock().getState();
 		
-		signBlock.setLine(0, ChatColor.BOLD+"[shop]");
-		if(type == ShopType.SELLING)
-			signBlock.setLine(1, "Selling: "+ChatColor.BOLD+ amount);
-		else if(type == ShopType.BUYING)
-			signBlock.setLine(1, "Buying: "+ChatColor.BOLD+ amount);
-		else
+		signBlock.setLine(0, ChatColor.BOLD + "[shop]");
+		if (type == ShopType.SELLING) {
+			signBlock.setLine(1, "Selling: " + ChatColor.BOLD+ amount);
+		}
+		else if (type == ShopType.BUYING) {
+			signBlock.setLine(1, "Buying: " + ChatColor.BOLD+ amount);
+		}
+		else {
 			signBlock.setLine(1, "Bartering: "); //TODO, "Bartering: Dirt for Stone, etc...
-		
-		if((price % 1) == 0){
-			signBlock.setLine(2, ChatColor.GREEN+""+ price.intValue() +" "+ Shop.getPlugin().getEconomyDisplayName());
-		}
-		else{
-			signBlock.setLine(2, ChatColor.GREEN+""+ price +" "+ Shop.getPlugin().getEconomyDisplayName());
 		}
 		
-		if(isAdminShop){
+		if ((price % 1) == 0) {
+			signBlock.setLine(2, ChatColor.GREEN + "" +  price.intValue() +" " +  Shop.getPlugin().getEconomyDisplayName());
+		}
+		else {
+			signBlock.setLine(2, ChatColor.GREEN + "" +  price +" " +  Shop.getPlugin().getEconomyDisplayName());
+		}
+		
+		if (isAdminShop) {
 			signBlock.setLine(3, "admin");
 		}
-		else{
+		else {
 			signBlock.setLine(3, this.owner);
 		}
 		signBlock.update(true);
 	}
 	
-	public void delete(){
+	public void delete() {
 		this.getDisplayItem().remove();
 		
 		Block b = this.getSignLocation().getBlock();
-		if(b.getType() == Material.WALL_SIGN){
+		if (b.getType() == Material.WALL_SIGN) {
 			Sign signBlock = (Sign)b.getState();
 			signBlock.setLine(0, "");
 			signBlock.setLine(1, "");
@@ -191,17 +199,19 @@ public class ShopObject{
 	}
 	
 	@Override
-	public String toString(){
+	public String toString() {
 		return owner + "." + displayItem.getItemStack().getType().toString();
 	}
 	
-	private boolean inventoryHasRoom(ItemStack itemToAdd){
+	private boolean inventoryHasRoom(ItemStack itemToAdd) {
 		int freeSpace = 0;
 		for (ItemStack i : getInventory()) {
-			if(i == null)
+			if (i == null) {
 				freeSpace += itemToAdd.getType().getMaxStackSize();
-			else if (i.getData().equals(itemToAdd.getData())) 
+			}
+			else if (i.getData().equals(itemToAdd.getData())) {
 				freeSpace += i.getType().getMaxStackSize() - i.getAmount();
+			}
 		}
 		return (itemToAdd.getAmount() <= freeSpace);
 	}
