@@ -222,9 +222,9 @@ public class ShopHandler {
 					int amount = Integer.parseInt(config.getString("shops." + shopOwner + "." + shopNumber + ".amount"));
 					String type = config.getString("shops." + shopOwner + "." + shopNumber + ".type");
 					boolean isAdmin = false;
-					if (type.contains("admin")) 7
-						isAdmin = true;
-				}
+					if (type.contains("admin")) {
+							isAdmin = true;
+					}
 					ShopType shopType = typeFromString(type);
 					int timesUsed = config.getInt("shops." + shopOwner + "." + shopNumber + ".timesUsed");
 					
