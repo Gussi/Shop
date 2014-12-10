@@ -249,7 +249,7 @@ public class MiscListener implements Listener{
 
 				final Sign sign = (Sign)clicked.getState();
 				
-				int amount = Integer.parseInt(sign.getLine(1).substring(sign.getLine(1).lastIndexOf(":")+4, sign.getLine(1).length())); //TODO index out of bounds -2
+				int amount = Integer.parseInt(sign.getLine(1).replaceAll("\\D+", ""));
 				double price = Double.parseDouble(sign.getLine(2).substring(2, sign.getLine(2).indexOf(" ")));
 				
 				ShopType type = ShopType.BUYING; //TODO this will be barter in the future
