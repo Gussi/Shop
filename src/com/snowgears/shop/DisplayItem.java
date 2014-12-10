@@ -2,8 +2,6 @@ package com.snowgears.shop;
 
 import java.util.Random;
 
-import me.minebuilders.clearlag.Clearlag;
-
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Item;
 import org.bukkit.inventory.ItemStack;
@@ -38,10 +36,6 @@ public class DisplayItem{
 		i.setVelocity(new Vector(0, 0.1, 0));
 		i.setMetadata("DisplayItem", new FixedMetadataValue(Shop.getPlugin(),0));
 		this.item = i;
-		
-		if (Shop.getPlugin().hasClearLag()) {
-			Clearlag.getEntityManager.addUnremovableEntity(i.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
-		}
 	}
 	
 	public void remove() {
@@ -49,9 +43,6 @@ public class DisplayItem{
 			return;
 		}
 
-		if (Shop.getPlugin().hasClearLag()) {
-			Clearlag.getEntityManager.removeUnremovableEntity(item.getUniqueId().getMostSignificantBits()); //TODO change this to what it should be
-		}
 		item.remove();
 		item = null;
 	}

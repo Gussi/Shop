@@ -20,8 +20,6 @@ import com.snowgears.shop.listeners.DisplayItemListener;
 import com.snowgears.shop.listeners.MiscListener;
 import com.snowgears.shop.listeners.ShopListener;
 import com.snowgears.shop.utils.Metrics;
-import com.snowgears.shop.utils.Updater;
-import com.snowgears.shop.utils.Updater.UpdateResult;
 
 import net.milkbowl.vault.economy.Economy;
 
@@ -74,22 +72,6 @@ public class Shop extends JavaPlugin{
 				getServer().getConsoleSender().sendMessage("[Shop]"+ChatColor.RED+" Data folder could not be created.");
 			}
 		}
-		
-		Updater updater = null;
-		boolean autoUpdate = getConfig().getBoolean("AUTO-UPDATE");
-		if (autoUpdate) {
-			updater = new Updater(this, 56083, this.getFile(), Updater.UpdateType.DEFAULT, false);
-		}
-		
-		if (updater != null && updater.getResult() == UpdateResult.SUCCESS) {
-			getServer().getScheduler().scheduleSyncDelayedTask(this, new Runnable() { 
-				public void run() { 
-					configFile.delete();
-					getServer().reload();
-				}
-			}, 1L); 
-		}
-
 
 		usePerms = getConfig().getBoolean("usePermissions");
 		useVault = getConfig().getConfigurationSection("Economy").getBoolean("useVault");

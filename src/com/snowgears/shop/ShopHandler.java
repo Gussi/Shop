@@ -70,7 +70,6 @@ public class ShopHandler {
 	private ArrayList<ShopObject> orderedShopList() {
 		ArrayList<ShopObject> list = new ArrayList<ShopObject>(allShops.values());
 		Collections.sort(list, new Comparator<ShopObject>() {
-			@Override
 			public int compare(ShopObject o1, ShopObject o2) {
 				return o1.getOwner().toLowerCase().compareTo(o2.getOwner().toLowerCase());
 			}
