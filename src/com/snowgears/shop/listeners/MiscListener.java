@@ -37,6 +37,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.material.MaterialData;
 
 import com.snowgears.shop.PlayerClickData;
@@ -567,10 +568,27 @@ public class MiscListener implements Listener{
 	//get amount of itemstack in inventory
 	public int getAmount(Inventory inventory, ItemStack is)	{
 		MaterialData md = is.getData();
+		ItemMeta im = is.getItemMeta();
 		ItemStack[] items = inventory.getContents();
 		int has = 0;
 		for (ItemStack item : items) {
-			if ((item != null) && (item.getAmount() > 0) && (item.getData().equals(md))) {
+			// Skip on empty
+			if (item == null) {
+				continue;
+			}
+			
+			// Check if material data doesn't match 
+			if (!item.getData().equals(md)) {
+				continue;
+			}
+			
+			// Check if item meta data doesn't match
+			if (!item.getItemMeta().equals(im)) {
+				continue;
+			}
+			
+			// Add to item count
+			if (item.getAmount() > 0) {
 				has += item.getAmount();
 			}
 		}
